@@ -9,8 +9,9 @@
 #define IN4 9
 #define ENB 10
 
-#define TurnLED 3
-#define HeadlightsLED 11
+#define RightTurnLED 3
+#define LeftTurnLED 11
+#define HeadlightsLED A1
 #define StopLED 12
 #define ReverseLED 13
 
@@ -21,7 +22,7 @@ unsigned long SendDataTimer = 60000; //количество миллисекун
 SoftwareSerial BTSerial(2,4);
 
 int currentString = 0;
-const int maxStringCount = 2;
+const int maxStringCount = 3; //максимальное количество элементов в полученном массиве
 //первая строка - движение вперёд/назад
 //вторая строка - поворот налево/направо
 String RecievedData[maxStringCount];
@@ -38,6 +39,12 @@ unsigned long SendDataLastTime;
 bool SendDataLastTimeFlag;
 
 char incomingChar;
+
+unsigned long EmergencyLEDLastTime;
+bool EmergencyLEDLastTimeFlag;
+bool EmergencyLEDActive;
+bool EmergencyLEDRiseUp = 1;
+int EmergencyLEDBrightness = 0;
 
 void motor(int acceleration, int accelerationSpeed, int steering, int steeringSpeed) {
   if (acceleration == 0) {
@@ -79,7 +86,8 @@ void setup() {
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
 
-  pinMode(TurnLED, OUTPUT);
+  pinMode(LeftTurnLED, OUTPUT);
+  pinMode(RightTurnLED, OUTPUT);
   pinMode(StopLED, OUTPUT);
   pinMode(HeadlightsLED, OUTPUT);
   pinMode(ReverseLED, OUTPUT);
@@ -172,5 +180,28 @@ void loop() {
     Serial.println(BatteryLevel);
     BTSerial.write(BatteryLevel);
     SendDataLastTimeFlag = 0;
+  }
+  if(EmergencyLEDActive == 1) {
+    if(EmergencyLEDLastTimeFlag == 0) {
+      EmergencyLEDLastTime = millis();
+      EmergencyLEDLastTimeFlag = 1;
+    }
+    if(EmergencyLEDLastTimeFlag == 1 && millis() - EmergencyLEDLastTime > 5) {
+      if (EmergencyLEDRiseUp && EmergencyLEDBrightness < 251) {
+        EmergencyLEDBrightness += 5;
+        analogWrite(LeftTurnLED, EmergencyLEDBrightness);
+        analogWrite(RightTurnLED, EmergencyLEDBrightness);
+      } else if (EmergencyLEDRiseUp == 0 && EmergencyLEDBrightness > 4) {
+        EmergencyLEDBrightness -= 5;
+        analogWrite(LeftTurnLED, EmergencyLEDBrightness);
+        analogWrite(RightTurnLED, EmergencyLEDBrightness);
+      }
+      if (EmergencyLEDBrightness >= 255) {
+        EmergencyLEDRiseUp = 0;
+      } else if (EmergencyLEDBrightness <= 0) {
+        EmergencyLEDRiseUp = 1;
+      }
+      EmergencyLEDLastTimeFlag = 0;
+    }
   }
 }
