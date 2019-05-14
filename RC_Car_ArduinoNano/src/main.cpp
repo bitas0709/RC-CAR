@@ -97,17 +97,17 @@ void setup() {
 }
 
 void loop() {
+  //Чтение данных, принятых через Bluetooth
   while (BTSerial.available()) {
     incomingChar = (BTSerial.read());
-    if (incomingChar == '$') {
+    if (incomingChar == '$') { // $ - переход на ввод следующего значения в массив
       if (currentString < maxStringCount - 1) {
         currentString++;
-        Serial.println("hhmd, $");
       } else {
         Serial.println("Less data expected!!!");
         currentString = 0;
       }
-    } else if (incomingChar == '~') {
+    } else if (incomingChar == '~') { // ~ - конец передачи пакета данных
       for (int i = 0; i <= currentString; i++) {
         Serial.print("RecievedData[");
         Serial.print(i);
@@ -180,6 +180,14 @@ void loop() {
     Serial.println(BatteryLevel);
     BTSerial.write(BatteryLevel);
     SendDataLastTimeFlag = 0;
+  }
+  if (RecievedIntData[2] == 1) {
+    EmergencyLEDActive = 1;
+  } else {
+    EmergencyLEDActive = 0;
+    digitalWrite(LeftTurnLED, LOW);
+    digitalWrite(RightTurnLED, LOW);
+    EmergencyLEDBrightness = 0;
   }
   if(EmergencyLEDActive == 1) {
     if(EmergencyLEDLastTimeFlag == 0) {
