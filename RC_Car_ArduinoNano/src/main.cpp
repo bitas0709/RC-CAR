@@ -15,6 +15,10 @@
 #define StopLED 12
 #define ReverseLED 13
 
+enum {
+  TurnLeft, TurnRight, EmergencyLight, StopLight, HeadLight, BackLight
+};
+
 #define BatteryLevelPin A0 //уровень заряда аккумулятора, полученный с делителя напряжения (10 кОм и 4.7 кОм)
 int BatteryLevel;
 unsigned long SendDataTimer = 60000; //количество миллисекунд, через которое будут отправлены данные с Adruino на удалённое устройство
@@ -38,13 +42,14 @@ int steeringDirection;
 unsigned long SendDataLastTime;
 bool SendDataLastTimeFlag;
 
-char incomingChar;
+unsigned long TurnLEDBlinkTime;
+bool TurnLEDBlinkFlag;
+bool TurnLEDBlinkActive;
+bool TurnLEDIsOn;
+int TurnLEDBlinkSpeed = 400;
+int TurnLEDBlinkID;
 
-unsigned long EmergencyLEDLastTime;
-bool EmergencyLEDLastTimeFlag;
-bool EmergencyLEDActive;
-bool EmergencyLEDRiseUp = 1;
-int EmergencyLEDBrightness = 0;
+char incomingChar;
 
 void motor(int acceleration, int accelerationSpeed, int steering, int steeringSpeed) {
   if (acceleration == 0) {
@@ -75,6 +80,55 @@ void motor(int acceleration, int accelerationSpeed, int steering, int steeringSp
     digitalWrite(IN1, HIGH);
     digitalWrite(IN2, LOW);
     analogWrite(ENA, steeringSpeed);
+  }
+}
+
+void TurnOnLED(int LEDMode, int enable) { //0 - отключить, 1 - активировать
+  switch (LEDMode) {
+    case TurnLeft:
+      if (enable == 1) {
+        digitalWrite(LeftTurnLED, HIGH);
+      } else {
+        digitalWrite(LeftTurnLED, LOW);
+      }
+      break;
+    case TurnRight:
+      if (enable == 1) {
+        digitalWrite(RightTurnLED, HIGH);
+      } else {
+        digitalWrite(RightTurnLED, LOW);
+      }
+      break;
+    case EmergencyLight:
+      if (enable == 1) {
+        digitalWrite(LeftTurnLED, HIGH);
+        digitalWrite(RightTurnLED, HIGH);
+      } else {
+        digitalWrite(LeftTurnLED, LOW);
+        digitalWrite(RightTurnLED, LOW);
+      }
+      break;
+    case HeadLight:
+      if (enable == 1) {
+        digitalWrite(HeadlightsLED, HIGH);
+      } else {
+        digitalWrite(HeadlightsLED, LOW);
+      }
+      break;
+    case StopLight:
+      if (enable == 1) {
+        digitalWrite(StopLED, HIGH);
+      } else {
+        digitalWrite(StopLED, LOW);
+      }
+      break;
+    case BackLight:
+      if (enable == 1) {
+        digitalWrite(ReverseLED, HIGH);
+      } else {
+        digitalWrite(ReverseLED, LOW);
+      }
+      break;
   }
 }
 
@@ -152,6 +206,58 @@ void loop() {
       steeringValue = 0;
       steeringDirection = 0;
     }
+    if (RecievedIntData[2] != 0) {
+      switch (RecievedIntData[2]) {
+        case 10: //выключить левый поворотник
+          TurnLEDBlinkActive = 0;
+          TurnOnLED(TurnLeft, 0);
+          break;
+        case 11: //включить левый поворотник
+          TurnLEDBlinkActive = 1;
+          TurnLEDBlinkID = TurnLeft;
+          TurnLEDIsOn = 1;
+          TurnOnLED(TurnLEDBlinkID, TurnLEDIsOn);
+          break;
+        case 20: //выключить правый поворотник
+          TurnLEDBlinkActive = 0;
+          TurnOnLED(TurnRight, 0);
+          break;
+        case 21: //включить правый поворотник
+          TurnLEDBlinkActive = 1;
+          TurnLEDBlinkID = TurnRight;
+          TurnLEDIsOn = 1;
+          TurnOnLED(TurnLEDBlinkID, TurnLEDIsOn);
+          break;
+        case 30: //выключить аварийные огни
+          TurnLEDBlinkActive = 0;
+          TurnOnLED(EmergencyLight, 0);
+          break;
+        case 31: //включить аварийные огни
+          TurnLEDBlinkActive = 1;
+          TurnLEDBlinkID = EmergencyLight;
+          TurnLEDIsOn = 1;
+          TurnOnLED(TurnLEDBlinkID, TurnLEDIsOn);
+          break;
+        case 40: //выключить стоп сигнал
+          TurnOnLED(StopLight, 0);
+          break;
+        case 41: //включить стоп сигнал
+          TurnOnLED(StopLight, 1);
+          break;
+        case 50: //выключить огни ближнего света
+          TurnOnLED(HeadLight, 0);
+          break;
+        case 51: //включить огни ближнего света
+          TurnOnLED(HeadLight, 1);
+          break;
+        case 60: //выключить огни заднего хода
+          TurnOnLED(BackLight, 0);
+          break;
+        case 61: //включить огни заднего хода
+          TurnOnLED(BackLight, 1);
+          break;
+      }
+    }
     /*Serial.print("accelerationDirection = ");
     Serial.println(accelerationDirection);
     Serial.print("accelerationValue = ");
@@ -181,35 +287,20 @@ void loop() {
     BTSerial.write(BatteryLevel);
     SendDataLastTimeFlag = 0;
   }
-  if (RecievedIntData[2] == 1) {
-    EmergencyLEDActive = 1;
-  } else {
-    EmergencyLEDActive = 0;
-    digitalWrite(LeftTurnLED, LOW);
-    digitalWrite(RightTurnLED, LOW);
-    EmergencyLEDBrightness = 0;
-  }
-  if(EmergencyLEDActive == 1) {
-    if(EmergencyLEDLastTimeFlag == 0) {
-      EmergencyLEDLastTime = millis();
-      EmergencyLEDLastTimeFlag = 1;
+  if (TurnLEDBlinkActive == 1) {
+    if (TurnLEDBlinkFlag == 0) {
+      TurnLEDBlinkTime = millis();
+      TurnLEDBlinkFlag = 1;
     }
-    if(EmergencyLEDLastTimeFlag == 1 && millis() - EmergencyLEDLastTime > 5) {
-      if (EmergencyLEDRiseUp && EmergencyLEDBrightness < 251) {
-        EmergencyLEDBrightness += 5;
-        analogWrite(LeftTurnLED, EmergencyLEDBrightness);
-        analogWrite(RightTurnLED, EmergencyLEDBrightness);
-      } else if (EmergencyLEDRiseUp == 0 && EmergencyLEDBrightness > 4) {
-        EmergencyLEDBrightness -= 5;
-        analogWrite(LeftTurnLED, EmergencyLEDBrightness);
-        analogWrite(RightTurnLED, EmergencyLEDBrightness);
+    if (TurnLEDBlinkFlag == 1 && millis() - TurnLEDBlinkTime > TurnLEDBlinkSpeed) {
+      if (TurnLEDIsOn == false) {
+        TurnOnLED(TurnLEDBlinkID, 1);
+        TurnLEDIsOn = 1;
+      } else {
+        TurnOnLED(TurnLEDBlinkID, 0);
+        TurnLEDIsOn = 0;
       }
-      if (EmergencyLEDBrightness >= 255) {
-        EmergencyLEDRiseUp = 0;
-      } else if (EmergencyLEDBrightness <= 0) {
-        EmergencyLEDRiseUp = 1;
-      }
-      EmergencyLEDLastTimeFlag = 0;
+      TurnLEDBlinkFlag = 0;
     }
   }
 }
