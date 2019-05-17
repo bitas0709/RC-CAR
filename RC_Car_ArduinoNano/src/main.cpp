@@ -1,3 +1,4 @@
+//3,5,6,9,10,11 - PWM порты
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 //ENA, IN1, IN2 - рулевое управление
@@ -46,7 +47,7 @@ unsigned long TurnLEDBlinkTime;
 bool TurnLEDBlinkFlag;
 bool TurnLEDBlinkActive;
 bool TurnLEDIsOn;
-int TurnLEDBlinkSpeed = 400;
+unsigned long TurnLEDBlinkSpeed = 400;
 int TurnLEDBlinkID;
 
 char incomingChar;
@@ -58,13 +59,13 @@ void motor(int acceleration, int accelerationSpeed, int steering, int steeringSp
     analogWrite(ENB, 0);
     digitalWrite(ReverseLED, LOW);
   } else if (acceleration == -1) {
-    digitalWrite(IN3, LOW);
-    digitalWrite(IN4, HIGH);
+    digitalWrite(IN3, HIGH);
+    digitalWrite(IN4, LOW);
     analogWrite(ENB, accelerationSpeed);
     digitalWrite(ReverseLED, HIGH);
   } else if (acceleration == 1) {
-    digitalWrite(IN3, HIGH);
-    digitalWrite(IN4, LOW);
+    digitalWrite(IN3, LOW);
+    digitalWrite(IN4, HIGH);
     analogWrite(ENB, accelerationSpeed);
     digitalWrite(ReverseLED, LOW);
   }
@@ -73,12 +74,12 @@ void motor(int acceleration, int accelerationSpeed, int steering, int steeringSp
     digitalWrite(IN2, LOW);
     analogWrite(ENA, 0);
   } else if (steering == -1) {
-    digitalWrite(IN1, LOW);
-    digitalWrite(IN2, HIGH);
-    analogWrite(ENA, steeringSpeed);
-  } else if (steering == 1) {
     digitalWrite(IN1, HIGH);
     digitalWrite(IN2, LOW);
+    analogWrite(ENA, steeringSpeed);
+  } else if (steering == 1) {
+    digitalWrite(IN1, LOW);
+    digitalWrite(IN2, HIGH);
     analogWrite(ENA, steeringSpeed);
   }
 }
@@ -153,7 +154,9 @@ void setup() {
 void loop() {
   //Чтение данных, принятых через Bluetooth
   while (BTSerial.available()) {
+    //Serial.println(BTSerial.peek());
     incomingChar = (BTSerial.read());
+    Serial.println(incomingChar);
     if (incomingChar == '$') { // $ - переход на ввод следующего значения в массив
       if (currentString < maxStringCount - 1) {
         currentString++;
@@ -162,12 +165,12 @@ void loop() {
         currentString = 0;
       }
     } else if (incomingChar == '~') { // ~ - конец передачи пакета данных
-      for (int i = 0; i <= currentString; i++) {
+      /*for (int i = 0; i <= currentString; i++) {
         Serial.print("RecievedData[");
         Serial.print(i);
         Serial.print("] = ");
         Serial.println(RecievedData[i]);
-      }
+      }*/
       allDataRecieved = true;
       currentString = 0;
     } else {
@@ -182,19 +185,20 @@ void loop() {
       Serial.print("] = ");
       Serial.println(RecievedIntData[i]);
     }
-    if (RecievedIntData[0] > 0) {
-      accelerationValue = map(RecievedIntData[0], 1, 100, 1, 255);
+    if (RecievedIntData[0] > 127) {
+      accelerationValue = map(RecievedIntData[0], 128, 255, 1, 255);
       accelerationDirection = 1;
-    } else if (RecievedIntData[0] < 0) {
+    } else if (RecievedIntData[0] < 127) {
       //accelerationValue = map(RecievedIntData[0], -1, -100, 1, 255);
       absAccelerationValue = abs(RecievedIntData[0]);
-      accelerationValue = map(absAccelerationValue, 1, 100, 1, 255);
+      accelerationValue = map(absAccelerationValue, 0, 126, 255, 1);
       accelerationDirection = -1;
-    } else if (RecievedIntData[0] == 0) {
-      accelerationValue = RecievedIntData[0];
+    } else if (RecievedIntData[0] == 127) {
+      //accelerationValue = RecievedIntData[0];
+      accelerationValue = 0;
       accelerationDirection = 0;
     }
-    if (RecievedIntData[1] > 0) {
+    /*if (RecievedIntData[1] > 0) {
       steeringValue = map(RecievedIntData[1], 1, 100, 1, 255);
       steeringDirection = 1;
     } else if (RecievedIntData[1] < 0) {
@@ -205,6 +209,22 @@ void loop() {
     } else if (RecievedIntData[1] == 0) {
       steeringValue = 0;
       steeringDirection = 0;
+    }*/
+    if (RecievedIntData[1] > 10 && RecievedIntData[1] < 50) {
+      steeringValue = map(RecievedIntData[1], 10, 50, 1, 127);
+      steeringDirection = -1;
+    } else if (RecievedIntData[1] > 50) {
+      steeringValue = 127;
+      steeringDirection = -1;
+    } else if (RecievedIntData[1] > -10 && RecievedIntData[1] < 10) {
+      steeringDirection = 0; 
+    } else if (RecievedIntData[1] < -10 && RecievedIntData[1] > -50) {
+      absSteeringValue = abs(RecievedIntData[1]);
+      steeringValue = map(absSteeringValue, 10, 50, 1, 127);
+      steeringDirection = 1;
+    } else if (RecievedIntData[1] < -50) {
+      steeringValue = 127;
+      steeringDirection = 1;
     }
     if (RecievedIntData[2] != 0) {
       switch (RecievedIntData[2]) {
