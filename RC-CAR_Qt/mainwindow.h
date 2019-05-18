@@ -15,6 +15,8 @@
 #include <QAccelerometer>
 #include <QAccelerometerReading>
 #include <QSlider>
+#include <QKeyEvent>
+#include <QMessageBox>
 
 namespace Ui {
 class MainWindow;
@@ -33,6 +35,8 @@ public:
     QBluetoothDeviceDiscoveryAgent *discoveryAgent;
     QBluetoothSocket *socket;
     QTimer *socketWriteTimer;
+    QTimer *exitTimeoutTimer;
+    bool exitTimeoutFlag = false;
     QByteArray sendData;
     int accValue;
     QString sendDataStr;
@@ -42,11 +46,12 @@ public:
     const char* sendAccelerometerChr;
     QAccelerometer *accelHard = new QAccelerometer();
     QAccelerometerReading *accel = new QAccelerometerReading();
+    virtual void keyPressEvent(QKeyEvent *event);
+    bool connectToKnownDeviceFlag = false;
+    QString selectedDevice;
 
 private slots:
     void on_SearchButton_clicked();
-
-    void on_ExitButton_clicked();
 
     void on_AccelerationSlider_sliderReleased();
 
@@ -65,6 +70,16 @@ private slots:
     void socketRead();
 
     void socketWrite();
+
+    void on_SettingsButton_clicked();
+
+    void on_ExitButton_clicked();
+
+    void ExitTimeout();
+
+    void connectToKnownDevice();
+
+    void on_comboBox_activated(int index);
 
 private:
     Ui::MainWindow *ui;

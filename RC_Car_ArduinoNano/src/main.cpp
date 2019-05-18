@@ -49,6 +49,9 @@ bool TurnLEDBlinkActive;
 bool TurnLEDIsOn;
 unsigned long TurnLEDBlinkSpeed = 400;
 int TurnLEDBlinkID;
+unsigned long LastRecievedPacketTime;
+bool LastRecievedPacketTimeFlag;
+bool LastRecievedPacketTimeOldFlag = true;
 
 char incomingChar;
 
@@ -178,6 +181,8 @@ void loop() {
     }
   }
   if (allDataRecieved == true) {
+    LastRecievedPacketTime = millis();
+    LastRecievedPacketTimeFlag = true;
     for(int i = 0; i < maxStringCount; i++) {
       RecievedIntData[i] = RecievedData[i].toInt();
       Serial.print("RecievedIntData[");
@@ -322,5 +327,17 @@ void loop() {
       }
       TurnLEDBlinkFlag = 0;
     }
+  }
+  if (LastRecievedPacketTimeFlag == true && millis() - LastRecievedPacketTime > 500/* && LastRecievedPacketTimeOldFlag == true*/) {
+    accelerationDirection = 0;
+    accelerationValue = 0;
+    steeringDirection = 0;
+    steeringValue = 0;
+    motor(accelerationDirection, accelerationValue, steeringDirection, steeringValue);
+    /*TurnLEDBlinkActive = 1;
+    TurnLEDBlinkID = EmergencyLight;
+    TurnLEDIsOn = 1;
+    TurnOnLED(TurnLEDBlinkID, TurnLEDIsOn);
+    LastRecievedPacketTimeOldFlag = false;*/
   }
 }

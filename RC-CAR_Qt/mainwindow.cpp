@@ -20,7 +20,9 @@ MainWindow::MainWindow(QWidget *parent) :
                                           "} ");
     connect(ui->BeginSearchButton, SIGNAL(clicked()), this, SLOT(startDiscovery()));
     socketWriteTimer = new QTimer();
+    exitTimeoutTimer = new QTimer();
     connect(socketWriteTimer, SIGNAL(timeout()), this, SLOT(socketWrite()));
+    connect(exitTimeoutTimer, SIGNAL(timeout()), this, SLOT(ExitTimeout()));
     accelHard->start();
 }
 
@@ -31,12 +33,13 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_SearchButton_clicked()
 {
-    ui->stackedWidget->setCurrentIndex(1);
-}
-
-void MainWindow::on_ExitButton_clicked()
-{
-
+    if (connectToKnownDeviceFlag == false) {
+        ui->stackedWidget->setCurrentIndex(1);
+        ui->DevicesList->clear();
+        ui->DevicesList->addItem("Для подключения к устройству дваждны нажмите на его адрес");
+    } else if (connectToKnownDeviceFlag == true) {
+        connectToKnownDevice();
+    }
 }
 
 void MainWindow::on_AccelerationSlider_sliderReleased()
@@ -81,7 +84,7 @@ void MainWindow::on_CancelButton_clicked()
 
 void MainWindow::on_DevicesList_itemDoubleClicked(QListWidgetItem *item)
 {
-    QString selectedDevice = item->text();
+    selectedDevice = item->text();
     socket = new QBluetoothSocket(QBluetoothServiceInfo::RfcommProtocol, this);
     socket->connectToService(QBluetoothAddress(selectedDevice), QBluetoothUuid(QBluetoothUuid::SerialPort));
     connect(socket, SIGNAL(connected()), this, SLOT(socketConnected()));
@@ -91,8 +94,6 @@ void MainWindow::on_DevicesList_itemDoubleClicked(QListWidgetItem *item)
 
 void MainWindow::socketConnected() {
     ui->stackedWidget->setCurrentIndex(2);
-    //connect(socketWriteTimer, SIGNAL(timeout()), this, SLOT(socketWrite()));
-    //socketWriteTimer->start(10);
     socketWriteTimer->start(150);
 }
 
@@ -101,20 +102,68 @@ void MainWindow::socketRead() {
 }
 
 void MainWindow::socketDisconnected() {
-
+    ui->stackedWidget->setCurrentIndex(1);
+    QMessageBox::warning(this, "Отключено", "Соединение с удалённым устройством потеряно");
 }
 
 void MainWindow::socketWrite() {
-    //qDebug() << "hehmda, it's time to send data";
-    //sendDataStr = char(ui->AccelerationSlider->value());
     sendDataStr = QString::number(ui->AccelerationSlider->value());
     sendDataChr = sendDataStr.toStdString().c_str();
     socket->write(sendDataChr);
-    //socket->write("~");
     socket->write("$");
     sendAccelerometerStr = QString::number(int(accelHard->reading()->y()*10));
     sendAccelerometerChr = sendAccelerometerStr.toStdString().c_str();
     qDebug() << "accel = " << int(accelHard->reading()->y()*10);
     socket->write(sendAccelerometerChr);
     socket->write("~");
+}
+
+void MainWindow::on_SettingsButton_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(3);
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event) {
+    switch(event->key()) {
+    case Qt::Key_Back:
+        if (exitTimeoutFlag == false) {
+            if (ui->stackedWidget->currentIndex() == 2) {
+                socket->disconnectFromService();
+                socketWriteTimer->stop();
+            }
+            ui->stackedWidget->setCurrentIndex(0);
+            exitTimeoutTimer->start(1000);
+            exitTimeoutFlag = true;
+        } else {
+            QApplication::quit();
+        }
+        break;
+    }
+}
+
+void MainWindow::on_ExitButton_clicked()
+{
+    QApplication::quit();
+}
+
+void MainWindow::ExitTimeout() {
+    exitTimeoutFlag = false;
+}
+
+void MainWindow::connectToKnownDevice() {
+    selectedDevice = "98:D3:32:11:1A:D9";
+    socket = new QBluetoothSocket(QBluetoothServiceInfo::RfcommProtocol, this);
+    socket->connectToService(QBluetoothAddress(selectedDevice), QBluetoothUuid(QBluetoothUuid::SerialPort));
+    connect(socket, SIGNAL(connected()), this, SLOT(socketConnected()));
+    connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+    connect(socket, SIGNAL(readyRead()), this, SLOT(socketRead()));
+}
+
+void MainWindow::on_comboBox_activated(int index)
+{
+    if (index == 0) {
+        connectToKnownDeviceFlag = false;
+    } else if (index == 1) {
+        connectToKnownDeviceFlag = true;
+    }
 }
