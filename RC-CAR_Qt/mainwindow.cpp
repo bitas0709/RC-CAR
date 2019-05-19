@@ -11,12 +11,13 @@ MainWindow::MainWindow(QWidget *parent) :
                                           "border: 1px solid #999999; "
                                           "background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #B1B1B1, stop:1 #c4c4c4); "
                                           "margin: 2px 0; "
+                                          "width: 200px"
                                           "} "
                                           "QSlider::handle:vertical { "
                                           "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #b4b4b4, stop:1 #8f8f8f); "
                                           "border: 1px solid #5c5c5c; "
                                           "margin: 0 -10px; "
-                                          "height: 50px"
+                                          "height: 150px"
                                           "} ");
     connect(ui->BeginSearchButton, SIGNAL(clicked()), this, SLOT(startDiscovery()));
     socketWriteTimer = new QTimer();

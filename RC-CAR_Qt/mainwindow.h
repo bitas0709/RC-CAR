@@ -17,6 +17,7 @@
 #include <QSlider>
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QFile>
 
 namespace Ui {
 class MainWindow;
@@ -49,6 +50,7 @@ public:
     virtual void keyPressEvent(QKeyEvent *event);
     bool connectToKnownDeviceFlag = false;
     QString selectedDevice;
+    QFile settings;
 
 private slots:
     void on_SearchButton_clicked();

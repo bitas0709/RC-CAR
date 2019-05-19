@@ -157,7 +157,6 @@ void setup() {
 void loop() {
   //Чтение данных, принятых через Bluetooth
   while (BTSerial.available()) {
-    //Serial.println(BTSerial.peek());
     incomingChar = (BTSerial.read());
     Serial.println(incomingChar);
     if (incomingChar == '$') { // $ - переход на ввод следующего значения в массив
@@ -168,12 +167,6 @@ void loop() {
         currentString = 0;
       }
     } else if (incomingChar == '~') { // ~ - конец передачи пакета данных
-      /*for (int i = 0; i <= currentString; i++) {
-        Serial.print("RecievedData[");
-        Serial.print(i);
-        Serial.print("] = ");
-        Serial.println(RecievedData[i]);
-      }*/
       allDataRecieved = true;
       currentString = 0;
     } else {
@@ -194,27 +187,13 @@ void loop() {
       accelerationValue = map(RecievedIntData[0], 128, 255, 1, 255);
       accelerationDirection = 1;
     } else if (RecievedIntData[0] < 127) {
-      //accelerationValue = map(RecievedIntData[0], -1, -100, 1, 255);
       absAccelerationValue = abs(RecievedIntData[0]);
       accelerationValue = map(absAccelerationValue, 0, 126, 255, 1);
       accelerationDirection = -1;
     } else if (RecievedIntData[0] == 127) {
-      //accelerationValue = RecievedIntData[0];
       accelerationValue = 0;
       accelerationDirection = 0;
     }
-    /*if (RecievedIntData[1] > 0) {
-      steeringValue = map(RecievedIntData[1], 1, 100, 1, 255);
-      steeringDirection = 1;
-    } else if (RecievedIntData[1] < 0) {
-      //steeringValue = map(RecievedIntData[1], 1, 100, 1, 255);
-      absSteeringValue = abs(RecievedIntData[1]);
-      steeringValue = map(RecievedIntData[1], 1, 100, 1, 255);
-      steeringDirection = -1;
-    } else if (RecievedIntData[1] == 0) {
-      steeringValue = 0;
-      steeringDirection = 0;
-    }*/
     if (RecievedIntData[1] > 10 && RecievedIntData[1] < 50) {
       steeringValue = map(RecievedIntData[1], 10, 50, 1, 127);
       steeringDirection = -1;
@@ -283,24 +262,12 @@ void loop() {
           break;
       }
     }
-    /*Serial.print("accelerationDirection = ");
-    Serial.println(accelerationDirection);
-    Serial.print("accelerationValue = ");
-    Serial.println(accelerationValue);
-    Serial.print("steeringDirection = ");
-    Serial.println(steeringDirection);
-    Serial.print("steeringValue = ");
-    Serial.println(steeringValue);*/
     motor(accelerationDirection, accelerationValue, steeringDirection, steeringValue);
     allDataRecieved = false;
     for (int i = 0; i < maxStringCount; i++) {
       RecievedData[i] = "";
     }
   }
-  
-  /*while (Serial.available()) {
-    BTSerial.write(Serial.read());
-  }*/
   if (SendDataLastTimeFlag == 0) {
     SendDataLastTime = millis();
     SendDataLastTimeFlag = 1;
@@ -334,10 +301,5 @@ void loop() {
     steeringDirection = 0;
     steeringValue = 0;
     motor(accelerationDirection, accelerationValue, steeringDirection, steeringValue);
-    /*TurnLEDBlinkActive = 1;
-    TurnLEDBlinkID = EmergencyLight;
-    TurnLEDIsOn = 1;
-    TurnOnLED(TurnLEDBlinkID, TurnLEDIsOn);
-    LastRecievedPacketTimeOldFlag = false;*/
   }
 }
