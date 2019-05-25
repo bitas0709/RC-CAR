@@ -22,7 +22,7 @@ enum {
 
 #define BatteryLevelPin A0 //уровень заряда аккумулятора, полученный с делителя напряжения (10 кОм и 4.7 кОм)
 int BatteryLevel;
-unsigned long SendDataTimer = 60000; //количество миллисекунд, через которое будут отправлены данные с Adruino на удалённое устройство
+unsigned long SendDataTimer = 10000; //количество миллисекунд, через которое будут отправлены данные с Adruino на удалённое устройство
 
 SoftwareSerial BTSerial(2,4);
 
@@ -158,7 +158,7 @@ void loop() {
   //Чтение данных, принятых через Bluetooth
   while (BTSerial.available()) {
     incomingChar = (BTSerial.read());
-    Serial.println(incomingChar);
+    //Serial.println(incomingChar);
     if (incomingChar == '$') { // $ - переход на ввод следующего значения в массив
       if (currentString < maxStringCount - 1) {
         currentString++;
@@ -178,10 +178,10 @@ void loop() {
     LastRecievedPacketTimeFlag = true;
     for(int i = 0; i < maxStringCount; i++) {
       RecievedIntData[i] = RecievedData[i].toInt();
-      Serial.print("RecievedIntData[");
+      /*Serial.print("RecievedIntData[");
       Serial.print(i);
       Serial.print("] = ");
-      Serial.println(RecievedIntData[i]);
+      Serial.println(RecievedIntData[i]);*/
     }
     if (RecievedIntData[0] > 127) {
       accelerationValue = map(RecievedIntData[0], 128, 255, 1, 255);
@@ -277,6 +277,7 @@ void loop() {
     Serial.print("BatteryLevel = ");
     Serial.println(BatteryLevel);
     BTSerial.write(BatteryLevel);
+    BTSerial.write("~");
     SendDataLastTimeFlag = 0;
   }
   if (TurnLEDBlinkActive == 1) {

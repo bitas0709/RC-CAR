@@ -39,6 +39,7 @@ public:
     QTimer *exitTimeoutTimer;
     bool exitTimeoutFlag = false;
     QByteArray sendData;
+    QByteArray recievedData;
     int accValue;
     QString sendDataStr;
     const char* sendDataChr;
@@ -48,7 +49,7 @@ public:
     QAccelerometer *accelHard = new QAccelerometer();
     QAccelerometerReading *accel = new QAccelerometerReading();
     virtual void keyPressEvent(QKeyEvent *event);
-    bool connectToKnownDeviceFlag = false;
+    bool connectToKnownDeviceFlag = true;
     QString selectedDevice;
     QFile settings;
 
@@ -82,6 +83,12 @@ private slots:
     void connectToKnownDevice();
 
     void on_comboBox_activated(int index);
+
+    void on_ReturnSettingsButton_clicked();
+
+    void on_TurnLeftButton_toggled(bool checked);
+
+    void on_SteeringSlider_sliderReleased();
 
 private:
     Ui::MainWindow *ui;

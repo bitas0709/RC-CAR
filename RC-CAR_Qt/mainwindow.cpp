@@ -24,7 +24,15 @@ MainWindow::MainWindow(QWidget *parent) :
     exitTimeoutTimer = new QTimer();
     connect(socketWriteTimer, SIGNAL(timeout()), this, SLOT(socketWrite()));
     connect(exitTimeoutTimer, SIGNAL(timeout()), this, SLOT(ExitTimeout()));
+
+    //так как неоновые огни ещё не добавлены в прошивку для машины, кнопка активации неоновых огней будет неактивна
+    ui->NeonLightButton->hide();
+    //по умолчанию идёт подключение к известному MAC адресу машины
+    ui->comboBox->setCurrentIndex(1);
+#ifdef Q_OS_ANDROID
     accelHard->start();
+    ui->SteeringSlider->hide();
+#endif
 }
 
 MainWindow::~MainWindow()
@@ -99,7 +107,8 @@ void MainWindow::socketConnected() {
 }
 
 void MainWindow::socketRead() {
-
+    recievedData = socket->readAll();
+    qDebug() << "recievedData = " << recievedData;
 }
 
 void MainWindow::socketDisconnected() {
@@ -111,11 +120,18 @@ void MainWindow::socketWrite() {
     sendDataStr = QString::number(ui->AccelerationSlider->value());
     sendDataChr = sendDataStr.toStdString().c_str();
     socket->write(sendDataChr);
+#ifdef Q_OS_ANDROID
     socket->write("$");
     sendAccelerometerStr = QString::number(int(accelHard->reading()->y()*10));
     sendAccelerometerChr = sendAccelerometerStr.toStdString().c_str();
     qDebug() << "accel = " << int(accelHard->reading()->y()*10);
     socket->write(sendAccelerometerChr);
+#else
+    socket->write("$");
+    sendDataStr = QString::number(ui->SteeringSlider->value());
+    sendDataChr = sendDataStr.toStdString().c_str();
+    socket->write(sendDataChr);
+#endif
     socket->write("~");
 }
 
@@ -127,6 +143,22 @@ void MainWindow::on_SettingsButton_clicked()
 void MainWindow::keyPressEvent(QKeyEvent *event) {
     switch(event->key()) {
     case Qt::Key_Back:
+        if (exitTimeoutFlag == false) {
+            if (ui->stackedWidget->currentIndex() == 2) {
+                socket->disconnectFromService();
+                socketWriteTimer->stop();
+            }
+            ui->stackedWidget->setCurrentIndex(0);
+            exitTimeoutTimer->start(1000);
+            exitTimeoutFlag = true;
+        } else {
+            QApplication::quit();
+        }
+        break;
+    case Qt::Key_W:
+        ui->AccelerationSlider->setValue(255);
+        break;
+    case Qt::Key_Escape:
         if (exitTimeoutFlag == false) {
             if (ui->stackedWidget->currentIndex() == 2) {
                 socket->disconnectFromService();
@@ -167,4 +199,19 @@ void MainWindow::on_comboBox_activated(int index)
     } else if (index == 1) {
         connectToKnownDeviceFlag = true;
     }
+}
+
+void MainWindow::on_ReturnSettingsButton_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(0);
+}
+
+void MainWindow::on_TurnLeftButton_toggled(bool checked)
+{
+    qDebug() << "checked = " << checked;
+}
+
+void MainWindow::on_SteeringSlider_sliderReleased()
+{
+    ui->SteeringSlider->setValue(0);
 }

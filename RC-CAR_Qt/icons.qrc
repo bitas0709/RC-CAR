@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Resources/Icons/ButtonTurnRight.png</file>
+        <file>Resources/Icons/ButtonTurnLeft.png</file>
+        <file>Resources/Icons/AppIcon.png</file>
+        <file>Resources/Icons/ButtonEmergencyLight.png</file>
+        <file>Resources/Icons/ButtonHeadLight.png</file>
+    </qresource>
+</RCC>
