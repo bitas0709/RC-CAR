@@ -28,7 +28,10 @@ MainWindow::MainWindow(QWidget *parent) :
     //так как неоновые огни ещё не добавлены в прошивку для машины, кнопка активации неоновых огней будет неактивна
     ui->NeonLightButton->hide();
     //по умолчанию идёт подключение к известному MAC адресу машины
-    ui->comboBox->setCurrentIndex(1);
+    //ui->comboBox->setCurrentIndex(1);
+    ui->comboBox->setCurrentIndex(settings.value("/Settings/ConnectionType", 0).toInt());
+    ui->comboBox_2->setCurrentIndex(settings.value("/Settings/AccelerometerAdj", 0).toInt());
+
 #ifdef Q_OS_ANDROID
     accelHard->start();
     ui->SteeringSlider->hide();
@@ -122,9 +125,23 @@ void MainWindow::socketWrite() {
     socket->write(sendDataChr);
 #ifdef Q_OS_ANDROID
     socket->write("$");
-    sendAccelerometerStr = QString::number(int(accelHard->reading()->y()*10));
-    sendAccelerometerChr = sendAccelerometerStr.toStdString().c_str();
-    qDebug() << "accel = " << int(accelHard->reading()->y()*10);
+    switch(ui->comboBox_2->currentIndex()) {
+    case 0:
+        sendAccelerometerStr = QString::number(int(accelHard->reading()->y()*10));
+        sendAccelerometerChr = sendAccelerometerStr.toStdString().c_str();
+        qDebug() << "accel = " << int(accelHard->reading()->y()*10);
+        break;
+    case 1:
+        sendAccelerometerStr = QString::number(int(accelHard->reading()->x()*10*-1));
+        sendAccelerometerChr = sendAccelerometerStr.toStdString().c_str();
+        qDebug() << "accel = " << int(accelHard->reading()->x()*10);
+        break;
+    case 2:
+        sendAccelerometerStr = QString::number(int(accelHard->reading()->x()*10));
+        sendAccelerometerChr = sendAccelerometerStr.toStdString().c_str();
+        qDebug() << "accel = " << int(accelHard->reading()->x()*10);
+        break;
+    }
     socket->write(sendAccelerometerChr);
 #else
     socket->write("$");
@@ -199,6 +216,7 @@ void MainWindow::on_comboBox_activated(int index)
     } else if (index == 1) {
         connectToKnownDeviceFlag = true;
     }
+    settings.setValue("/Settings/ConnectionType", index);
 }
 
 void MainWindow::on_ReturnSettingsButton_clicked()
@@ -214,4 +232,9 @@ void MainWindow::on_TurnLeftButton_toggled(bool checked)
 void MainWindow::on_SteeringSlider_sliderReleased()
 {
     ui->SteeringSlider->setValue(0);
+}
+
+void MainWindow::on_comboBox_2_activated(int index)
+{
+    settings.setValue("/Settings/AccelerometerAdj", index);
 }

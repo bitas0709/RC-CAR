@@ -17,6 +17,7 @@
 #include <QSlider>
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QSettings>
 #include <QFile>
 
 namespace Ui {
@@ -51,7 +52,7 @@ public:
     virtual void keyPressEvent(QKeyEvent *event);
     bool connectToKnownDeviceFlag = true;
     QString selectedDevice;
-    QFile settings;
+    QSettings settings;
 
 private slots:
     void on_SearchButton_clicked();
@@ -89,6 +90,8 @@ private slots:
     void on_TurnLeftButton_toggled(bool checked);
 
     void on_SteeringSlider_sliderReleased();
+
+    void on_comboBox_2_activated(int index);
 
 private:
     Ui::MainWindow *ui;

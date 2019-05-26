@@ -51,7 +51,14 @@ DISTFILES += \
     android/gradle/wrapper/gradle-wrapper.properties \
     android/gradlew \
     android/gradlew.bat \
-    android/res/values/libs.xml
+    android/res/values/libs.xml \
+    androidv7a/AndroidManifest.xml \
+    androidv7a/build.gradle \
+    androidv7a/gradle/wrapper/gradle-wrapper.jar \
+    androidv7a/gradle/wrapper/gradle-wrapper.properties \
+    androidv7a/gradlew \
+    androidv7a/gradlew.bat \
+    androidv7a/res/values/libs.xml
 
 RESOURCES += \
     icons.qrc
@@ -59,4 +66,9 @@ RESOURCES += \
 contains(ANDROID_TARGET_ARCH,arm64-v8a) {
     ANDROID_PACKAGE_SOURCE_DIR = \
         $$PWD/android
+}
+
+contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    ANDROID_PACKAGE_SOURCE_DIR = \
+        $$PWD/androidv7a
 }
