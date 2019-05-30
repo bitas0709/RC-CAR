@@ -442,7 +442,7 @@
           </item>
           <item>
            <property name="text">
-            <string>Подключиться к RC-CAR (HC-05)</string>
+            <string>Подключиться к последнему устройству</string>
            </property>
           </item>
          </widget>

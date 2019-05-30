@@ -99,6 +99,7 @@ void MainWindow::on_DevicesList_itemDoubleClicked(QListWidgetItem *item)
     selectedDevice = item->text();
     socket = new QBluetoothSocket(QBluetoothServiceInfo::RfcommProtocol, this);
     socket->connectToService(QBluetoothAddress(selectedDevice), QBluetoothUuid(QBluetoothUuid::SerialPort));
+    settings.setValue("/Settings/LastConnectedDevice", selectedDevice);
     connect(socket, SIGNAL(connected()), this, SLOT(socketConnected()));
     connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
     connect(socket, SIGNAL(readyRead()), this, SLOT(socketRead()));
@@ -201,12 +202,17 @@ void MainWindow::ExitTimeout() {
 }
 
 void MainWindow::connectToKnownDevice() {
-    selectedDevice = "98:D3:32:11:1A:D9";
-    socket = new QBluetoothSocket(QBluetoothServiceInfo::RfcommProtocol, this);
-    socket->connectToService(QBluetoothAddress(selectedDevice), QBluetoothUuid(QBluetoothUuid::SerialPort));
-    connect(socket, SIGNAL(connected()), this, SLOT(socketConnected()));
-    connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
-    connect(socket, SIGNAL(readyRead()), this, SLOT(socketRead()));
+    //selectedDevice = "98:D3:32:11:1A:D9";
+    selectedDevice = settings.value("/Settings/LastConnectedDevice", 0).toString();
+    if (selectedDevice == "0") {
+        QMessageBox::warning(this, "Ошибка", "Ни одно устройство ранее не было подключено");
+    } else {
+        socket = new QBluetoothSocket(QBluetoothServiceInfo::RfcommProtocol, this);
+        socket->connectToService(QBluetoothAddress(selectedDevice), QBluetoothUuid(QBluetoothUuid::SerialPort));
+        connect(socket, SIGNAL(connected()), this, SLOT(socketConnected()));
+        connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+        connect(socket, SIGNAL(readyRead()), this, SLOT(socketRead()));
+    }
 }
 
 void MainWindow::on_comboBox_activated(int index)
