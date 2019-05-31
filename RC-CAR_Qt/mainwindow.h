@@ -53,6 +53,8 @@ public:
     bool connectToKnownDeviceFlag = true;
     QString selectedDevice;
     QSettings settings;
+    bool LeftButtonFlag, RightButtonFlag, EmergencyButtonFlag, HeadLightButtonFlag;
+    bool lastLeftButtonFlag, lastRightButtonFlag, lastEmergencyButtonFlag, lastHeadLightButtonFlag;
 
 private slots:
     void on_SearchButton_clicked();
@@ -87,11 +89,17 @@ private slots:
 
     void on_ReturnSettingsButton_clicked();
 
-    void on_TurnLeftButton_toggled(bool checked);
-
     void on_SteeringSlider_sliderReleased();
 
     void on_comboBox_2_activated(int index);
+
+    void on_TurnLeftButton_clicked();
+
+    void on_EmergencyLightButton_clicked();
+
+    void on_TurnRightButton_clicked();
+
+    void on_HeadlightButton_clicked();
 
 private:
     Ui::MainWindow *ui;

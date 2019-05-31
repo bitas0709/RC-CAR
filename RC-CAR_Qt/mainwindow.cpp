@@ -150,6 +150,39 @@ void MainWindow::socketWrite() {
     sendDataChr = sendDataStr.toStdString().c_str();
     socket->write(sendDataChr);
 #endif
+    if (lastLeftButtonFlag != LeftButtonFlag) {
+        socket->write("$");
+        if (LeftButtonFlag) {
+            socket->write("11");
+        } else {
+            socket->write("10");
+        }
+        lastLeftButtonFlag = LeftButtonFlag;
+    } else if (lastRightButtonFlag != RightButtonFlag) {
+        socket->write("$");
+        if (RightButtonFlag) {
+            socket->write("21");
+        } else {
+            socket->write("20");
+        }
+        lastRightButtonFlag = RightButtonFlag;
+    } else if (lastEmergencyButtonFlag != EmergencyButtonFlag) {
+        socket->write("$");
+        if (EmergencyButtonFlag) {
+            socket->write("31");
+        } else {
+            socket->write("30");
+        }
+        lastEmergencyButtonFlag = EmergencyButtonFlag;
+    } else if (lastHeadLightButtonFlag != HeadLightButtonFlag) {
+        socket->write("$");
+        if (HeadLightButtonFlag) {
+            socket->write("51");
+        } else {
+            socket->write("50");
+        }
+        lastHeadLightButtonFlag = HeadLightButtonFlag;
+    }
     socket->write("~");
 }
 
@@ -230,11 +263,6 @@ void MainWindow::on_ReturnSettingsButton_clicked()
     ui->stackedWidget->setCurrentIndex(0);
 }
 
-void MainWindow::on_TurnLeftButton_toggled(bool checked)
-{
-    qDebug() << "checked = " << checked;
-}
-
 void MainWindow::on_SteeringSlider_sliderReleased()
 {
     ui->SteeringSlider->setValue(0);
@@ -243,4 +271,24 @@ void MainWindow::on_SteeringSlider_sliderReleased()
 void MainWindow::on_comboBox_2_activated(int index)
 {
     settings.setValue("/Settings/AccelerometerAdj", index);
+}
+
+void MainWindow::on_TurnLeftButton_clicked()
+{
+    LeftButtonFlag = !LeftButtonFlag;
+}
+
+void MainWindow::on_EmergencyLightButton_clicked()
+{
+    EmergencyButtonFlag = !EmergencyButtonFlag;
+}
+
+void MainWindow::on_TurnRightButton_clicked()
+{
+    RightButtonFlag = !RightButtonFlag;
+}
+
+void MainWindow::on_HeadlightButton_clicked()
+{
+    HeadLightButtonFlag = !HeadLightButtonFlag;
 }
