@@ -52,6 +52,9 @@ void MainWindow::on_SearchButton_clicked()
     } else if (connectToKnownDeviceFlag == true) {
         connectToKnownDevice();
     }
+    /*if (settings.value("/Settings/LastConnectedDevice:", 0) == 0) {
+
+    }*/
 }
 
 void MainWindow::on_AccelerationSlider_sliderReleased()
@@ -112,7 +115,16 @@ void MainWindow::socketConnected() {
 
 void MainWindow::socketRead() {
     recievedData = socket->readAll();
-    qDebug() << "recievedData = " << recievedData;
+    QString recievedDataStr = recievedData;
+    for (int i = 0; i < recievedDataStr.size(); i++) {
+        if (recievedDataStr == "$") {
+
+        } else if (recievedDataStr == "~") {
+
+        } else {
+            ui->BatteryLevelValueLabel->setNum(recievedDataStr.at(0).toLatin1());
+        }
+    }
 }
 
 void MainWindow::socketDisconnected() {
@@ -209,6 +221,15 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
     case Qt::Key_W:
         ui->AccelerationSlider->setValue(255);
         break;
+    case Qt::Key_S:
+        ui->AccelerationSlider->setValue(0);
+        break;
+    case Qt::Key_A:
+        ui->SteeringSlider->setValue(-90);
+        break;
+    case Qt::Key_D:
+        ui->SteeringSlider->setValue(90);
+        break;
     case Qt::Key_Escape:
         if (exitTimeoutFlag == false) {
             if (ui->stackedWidget->currentIndex() == 2) {
@@ -221,6 +242,23 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
         } else {
             QApplication::quit();
         }
+        break;
+    }
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent *event) {
+    switch (event->key()) {
+    case Qt::Key_W:
+        ui->AccelerationSlider->setValue(127);
+        break;
+    case Qt::Key_S:
+        ui->AccelerationSlider->setValue(127);
+        break;
+    case Qt::Key_A:
+        ui->SteeringSlider->setValue(0);
+        break;
+    case Qt::Key_D:
+        ui->SteeringSlider->setValue(0);
         break;
     }
 }

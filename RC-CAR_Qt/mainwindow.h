@@ -50,6 +50,7 @@ public:
     QAccelerometer *accelHard = new QAccelerometer();
     QAccelerometerReading *accel = new QAccelerometerReading();
     virtual void keyPressEvent(QKeyEvent *event);
+    virtual void keyReleaseEvent(QKeyEvent *event);
     bool connectToKnownDeviceFlag = true;
     QString selectedDevice;
     QSettings settings;
