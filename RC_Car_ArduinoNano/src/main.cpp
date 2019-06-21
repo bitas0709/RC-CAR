@@ -2,19 +2,20 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 //ENA, IN1, IN2 - рулевое управление
-#define ENA 5
-#define IN1 6
-#define IN2 7
+#define ENA 3
+#define IN1 A4
+#define IN2 A3
 //ENB, IN3, IN4 - управление ускорением
-#define IN3 8
-#define IN4 9
-#define ENB 10
+#define IN3 A2
+#define IN4 A1
+#define ENB 5
 
-#define RightTurnLED 3
+#define FoglightLED 6
+#define HeadlightsLED 7
+#define ReverseLED 8
+#define StopLED 9
+#define RightTurnLED 10
 #define LeftTurnLED 11
-#define HeadlightsLED A1
-#define StopLED 12
-#define ReverseLED 13
 
 enum {
   TurnLeft, TurnRight, EmergencyLight, StopLight, HeadLight, BackLight
@@ -158,7 +159,7 @@ void loop() {
   //Чтение данных, принятых через Bluetooth
   while (BTSerial.available()) {
     incomingChar = (BTSerial.read());
-    //Serial.println(incomingChar);
+    Serial.println(incomingChar);
     if (incomingChar == '$') { // $ - переход на ввод следующего значения в массив
       if (currentString < maxStringCount - 1) {
         currentString++;
