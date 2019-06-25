@@ -1,2 +1,2 @@
 # RC-CAR
-This repository contains programs and code for converting a conventional radio-controlled car into a smarter and more customizable one.
+Набор программ, позволяющий с помощью Arduino, HC-05 и L298N сделать из обычной машины на радиоуправлении машину, управляемую с любого Android 4.2+ устройства, обладающего акселерометром.

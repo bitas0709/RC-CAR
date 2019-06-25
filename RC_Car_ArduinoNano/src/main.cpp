@@ -1,6 +1,7 @@
 //3,5,6,9,10,11 - PWM порты
 #include <Arduino.h>
 #include <SoftwareSerial.h>
+#include "libraries/bluetooth.h"
 //ENA, IN1, IN2 - рулевое управление
 #define ENA 3
 #define IN1 A4
