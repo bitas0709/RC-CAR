@@ -1,3 +1,10 @@
+/*
+    Данный код предназначен для перчатки, на которой расположен MPU6050.
+    Перчатка может управлять только ускорением и поворотом колёс.
+    Дополнительные функции по типу включения различных светодиодных огней
+    есть в приложении на Qt, оптимизированном под PC и Android версией выше 4.1
+*/
+
 #include <Arduino.h>
 #include "I2Cdev.h"
 #include "MPU6050.h"
@@ -73,7 +80,15 @@ void loop() {
     // каждые P_OUT миллисекунд выводим результат в COM порт
     if( p_next < t ){
         p_next = t + P_OUT;
-        mapped_ax = map(int(angle_ax), -90, 90, 0, 255);
+        if (int(angle_ax) >= -45 && int(angle_ax) <= 45) {
+            mapped_ax = map(int(angle_ax), -45, 45, 0, 255);
+        } else if (int(angle_ax) < -45) {
+            mapped_ax = 0;
+        } else if (int(angle_ax) > 45) {
+            mapped_ax = 255;
+        }
+        //Serial.print(angle_ax);
+        //Serial.print("/");
         Serial.print(mapped_ax);
         Serial.print("/");
         Serial.println(angle_ay);
@@ -82,6 +97,6 @@ void loop() {
         BTSerial.print("$");
         BTSerial.print(int(angle_ay));
         BTSerial.print("~");
-        delay(150);
+        delay(100);
     }
 }
