@@ -24,7 +24,10 @@ MainWindow::MainWindow(QWidget *parent) :
     exitTimeoutTimer = new QTimer();
     connect(socketWriteTimer, SIGNAL(timeout()), this, SLOT(socketWrite()));
     connect(exitTimeoutTimer, SIGNAL(timeout()), this, SLOT(ExitTimeout()));
-
+    if (settings.value("/Settings/ConnectionType", 0).toInt() == 0) {
+        settings.setValue("/Settings/ConnectionType", 0);
+        connectToKnownDeviceFlag = false;
+    }
     //так как неоновые огни ещё не добавлены в прошивку для машины, кнопка активации неоновых огней будет неактивна
     ui->NeonLightButton->hide();
     //по умолчанию идёт подключение к известному MAC адресу машины
@@ -109,6 +112,7 @@ void MainWindow::on_DevicesList_itemDoubleClicked(QListWidgetItem *item)
 }
 
 void MainWindow::socketConnected() {
+    lastStackedWidgetIndex = ui->stackedWidget->currentIndex();
     ui->stackedWidget->setCurrentIndex(2);
     socketWriteTimer->start(150);
 }
@@ -128,6 +132,7 @@ void MainWindow::socketRead() {
 }
 
 void MainWindow::socketDisconnected() {
+    lastStackedWidgetIndex = ui->stackedWidget->currentIndex();
     ui->stackedWidget->setCurrentIndex(1);
     QMessageBox::warning(this, "Отключено", "Соединение с удалённым устройством потеряно");
 }
@@ -200,6 +205,7 @@ void MainWindow::socketWrite() {
 
 void MainWindow::on_SettingsButton_clicked()
 {
+    lastStackedWidgetIndex = ui->stackedWidget->currentIndex();
     ui->stackedWidget->setCurrentIndex(3);
 }
 
@@ -211,7 +217,8 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
                 socket->disconnectFromService();
                 socketWriteTimer->stop();
             }
-            ui->stackedWidget->setCurrentIndex(0);
+            ui->stackedWidget->setCurrentIndex(lastStackedWidgetIndex);
+            //ui->stackedWidget->setCurrentIndex(0);
             exitTimeoutTimer->start(1000);
             exitTimeoutFlag = true;
         } else {

@@ -56,6 +56,7 @@ public:
     QSettings settings;
     bool LeftButtonFlag, RightButtonFlag, EmergencyButtonFlag, HeadLightButtonFlag;
     bool lastLeftButtonFlag, lastRightButtonFlag, lastEmergencyButtonFlag, lastHeadLightButtonFlag;
+    int lastStackedWidgetIndex = 0;
 
 private slots:
     void on_SearchButton_clicked();

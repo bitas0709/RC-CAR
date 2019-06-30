@@ -1,7 +1,6 @@
 //3,5,6,9,10,11 - PWM порты
 #include <Arduino.h>
 #include <SoftwareSerial.h>
-#include "libraries/bluetooth.h"
 //ENA, IN1, IN2 - рулевое управление
 #define ENA 3
 #define IN1 A4
@@ -17,6 +16,39 @@
 #define StopLED 9
 #define RightTurnLED 10
 #define LeftTurnLED 11
+
+/* 
+Далее идёт описание кодов определённых запросов:
+
+AccelSteeringCode - получение информации о ускорении и положении руля одновременно.
+  Использование: write(AccelSteeringCode, AccelVal, SteeringVal);
+  AccelVal = 0 .. 255, SteeringVal = 0 .. 255
+  Нулевое значение равен 127.
+AcceleratonCode - получение информации только о ускорении.
+  Использование: write(AccelerationCode, AccelVal);
+SteeringCode - получение информации только о повороте руля.
+  Использование: write(SteeringCode, SteeringVal);
+KeepAlive - проверка связи между управляемым устройством и контроллером.
+  Если ответ от контроллера не получен, то вызывается функция
+  motor() с нулевыми значениями для предотвращения аварии из-за
+  потери соединения.
+  Время ожидания ответа настраивается вручную.
+Все последующие коды, содержащие в имени LED, управляют определёнными светодиодами.
+  Использование: write(FoglightLEDCode, value); value =  0 .. 1
+
+Все коды должны совпадать как на контроллере, так и на управляемом устройстве
+ */
+
+#define AccelSteeringCode 01
+#define AccelerationCode 02
+#define SteeringCode 03
+#define KeepAliveCode 04
+#define HeadlightsLEDCode 05
+#define FoglightLEDCode 06
+#define RightTurnLEDCode 07
+#define LeftTurnLEDCode 08
+#define EmergencyLightLEDCode 09
+#define BatteryStatusCode 10
 
 enum {
   TurnLeft, TurnRight, EmergencyLight, StopLight, HeadLight, BackLight
@@ -54,6 +86,12 @@ int TurnLEDBlinkID;
 unsigned long LastRecievedPacketTime;
 bool LastRecievedPacketTimeFlag;
 bool LastRecievedPacketTimeOldFlag = true;
+
+unsigned long keepAliveLastTime;
+unsigned long keepAliveWaitingTime = 500;
+bool keepAliveLastTimeFlag;
+bool keepAliveFlag = true;
+bool keepAliveConfirmRecieved;
 
 char incomingChar;
 
@@ -304,5 +342,24 @@ void loop() {
     steeringDirection = 0;
     steeringValue = 0;
     motor(accelerationDirection, accelerationValue, steeringDirection, steeringValue);
+    //keepAliveFlag = false;
+  }
+  if (!keepAliveFlag) {
+    BTSerial.write(KeepAliveCode);
+    BTSerial.write("~");
+    keepAliveLastTime = millis();
+    keepAliveLastTimeFlag = true;
+  }
+  if (keepAliveLastTimeFlag == 1 && millis() - keepAliveLastTime > keepAliveWaitingTime) {
+    if (keepAliveConfirmRecieved) {
+      keepAliveFlag = true;
+    } else {
+      accelerationDirection = 0;
+      accelerationValue = 0;
+      steeringDirection = 0;
+      steeringValue = 0;
+      motor(accelerationDirection, accelerationValue, steeringDirection, steeringValue);
+    }
+    keepAliveLastTimeFlag = false;
   }
 }
