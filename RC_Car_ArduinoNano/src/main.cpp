@@ -51,7 +51,7 @@ KeepAlive - проверка связи между управляемым уст
 #define BatteryStatusCode 10
 
 enum {
-  TurnLeft, TurnRight, EmergencyLight, StopLight, HeadLight, BackLight
+  TurnLeft, TurnRight, EmergencyLight, StopLight, HeadLight, BackLight, FogLight
 };
 
 #define BatteryLevelPin A0 //уровень заряда аккумулятора, полученный с делителя напряжения (10 кОм и 4.7 кОм)
@@ -173,6 +173,13 @@ void TurnOnLED(int LEDMode, int enable) { //0 - отключить, 1 - акти
         digitalWrite(ReverseLED, LOW);
       }
       break;
+    case FogLight:
+      if (enable == 1) {
+        digitalWrite(FoglightLED, HIGH);
+      } else {
+        digitalWrite(FoglightLED, LOW);
+      }
+      break;
   }
 }
 
@@ -223,7 +230,96 @@ void loop() {
       Serial.print("] = ");
       Serial.println(RecievedIntData[i]);*/
     }
-    if (RecievedIntData[0] > 127) {
+    switch(RecievedIntData[0]) {
+      case AccelSteeringCode:
+        if (RecievedIntData[1] > 127) {
+          accelerationValue = map(RecievedIntData[1], 128, 255, 1, 255);
+          accelerationDirection = 1;
+        } else if (RecievedIntData[1] < 127) {
+          absAccelerationValue = abs(RecievedIntData[1]);
+          accelerationValue = map(absAccelerationValue, 0, 126, 255, 1);
+          accelerationDirection = -1;
+        } else if (RecievedIntData[1] == 127) {
+          accelerationValue = 0;
+          accelerationDirection = 0;
+        }
+        if (RecievedIntData[2] > 10 && RecievedIntData[2] < 50) {
+          steeringValue = map(RecievedIntData[2], 10, 50, 1, 127);
+          steeringDirection = -1;
+        } else if (RecievedIntData[2] > 50) {
+          steeringValue = 127;
+          steeringDirection = -1;
+        } else if (RecievedIntData[2] > -10 && RecievedIntData[2] < 10) {
+          steeringDirection = 0; 
+        } else if (RecievedIntData[2] < -10 && RecievedIntData[2] > -50) {
+          absSteeringValue = abs(RecievedIntData[2]);
+         steeringValue = map(absSteeringValue, 10, 50, 1, 127);
+         steeringDirection = 1;
+        } else if (RecievedIntData[2] < -50) {
+          steeringValue = 127;
+          steeringDirection = 1;
+        }
+        break;
+      case AccelerationCode:
+        if (RecievedIntData[1] > 127) {
+          accelerationValue = map(RecievedIntData[1], 128, 255, 1, 255);
+          accelerationDirection = 1;
+        } else if (RecievedIntData[1] < 127) {
+          absAccelerationValue = abs(RecievedIntData[1]);
+          accelerationValue = map(absAccelerationValue, 0, 126, 255, 1);
+          accelerationDirection = -1;
+        } else if (RecievedIntData[1] == 127) {
+          accelerationValue = 0;
+          accelerationDirection = 0;
+        }
+        break;
+      case SteeringCode:
+        if (RecievedIntData[1] > 10 && RecievedIntData[1] < 50) {
+          steeringValue = map(RecievedIntData[1], 10, 50, 1, 127);
+          steeringDirection = -1;
+        } else if (RecievedIntData[1] > 50) {
+          steeringValue = 127;
+          steeringDirection = -1;
+        } else if (RecievedIntData[1] > -10 && RecievedIntData[1] < 10) {
+          steeringDirection = 0; 
+        } else if (RecievedIntData[1] < -10 && RecievedIntData[1] > -50) {
+          absSteeringValue = abs(RecievedIntData[1]);
+         steeringValue = map(absSteeringValue, 10, 50, 1, 127);
+         steeringDirection = 1;
+        } else if (RecievedIntData[1] < -50) {
+          steeringValue = 127;
+          steeringDirection = 1;
+        }
+        break;
+      case KeepAliveCode:
+        break;
+      case HeadlightsLEDCode:
+        if (RecievedIntData[1] == true) {
+          TurnOnLED(HeadLight, 1);
+        } else if (RecievedIntData[1] == false) {
+          TurnOnLED(HeadLight, 0);
+        }
+        break;
+      case FoglightLEDCode:
+        if (RecievedIntData[1] == true) {
+          TurnOnLED(FogLight, 1);
+        } else if (RecievedIntData[1] == false) {
+          TurnOnLED(FogLight, 0);
+        }
+        break;
+      case RightTurnLEDCode:
+        if (RecievedIntData[1] == true) {
+          TurnLEDBlinkActive = 1;
+          TurnLEDBlinkID = TurnRight;
+          TurnLEDIsOn = 1;
+          TurnOnLED(TurnLEDBlinkID, TurnLEDIsOn);
+        } else {
+          TurnLEDBlinkActive = 0;
+          TurnOnLED(TurnRight, 0);
+        }
+        break;
+    }
+    /*if (RecievedIntData[0] > 127) {
       accelerationValue = map(RecievedIntData[0], 128, 255, 1, 255);
       accelerationDirection = 1;
     } else if (RecievedIntData[0] < 127) {
@@ -301,7 +397,7 @@ void loop() {
           TurnOnLED(BackLight, 1);
           break;
       }
-    }
+    }*/
     motor(accelerationDirection, accelerationValue, steeringDirection, steeringValue);
     allDataRecieved = false;
     for (int i = 0; i < maxStringCount; i++) {
@@ -336,7 +432,7 @@ void loop() {
       TurnLEDBlinkFlag = 0;
     }
   }
-  if (LastRecievedPacketTimeFlag == true && millis() - LastRecievedPacketTime > 500/* && LastRecievedPacketTimeOldFlag == true*/) {
+  if (LastRecievedPacketTimeFlag == true && millis() - LastRecievedPacketTime > 200/* && LastRecievedPacketTimeOldFlag == true*/) {
     accelerationDirection = 0;
     accelerationValue = 0;
     steeringDirection = 0;

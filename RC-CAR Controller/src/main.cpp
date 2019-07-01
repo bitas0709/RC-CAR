@@ -5,6 +5,17 @@
     есть в приложении на Qt, оптимизированном под PC и Android версией выше 4.1
 */
 
+#define AccelSteeringCode 01
+#define AccelerationCode 02
+#define SteeringCode 03
+#define KeepAliveCode 04
+#define HeadlightsLEDCode 05
+#define FoglightLEDCode 06
+#define RightTurnLEDCode 07
+#define LeftTurnLEDCode 08
+#define EmergencyLightLEDCode 09
+#define BatteryStatusCode 10
+
 #include <Arduino.h>
 #include "I2Cdev.h"
 #include "MPU6050.h"
@@ -87,15 +98,23 @@ void loop() {
         } else if (int(angle_ax) > 45) {
             mapped_ax = 255;
         }
+        if (int(angle_ay) >= -50 && int(angle_ay) < 0) {
+            mapped_ay = map(int(angle_ay), -50, -1, -90, -1);
+        } else if (int(angle_ay) < -50) {
+            mapped_ay = -90;
+        } else {
+            mapped_ay = angle_ay;
+        }
         //Serial.print(angle_ax);
         //Serial.print("/");
         Serial.print(mapped_ax);
         Serial.print("/");
-        Serial.println(angle_ay);
+        //Serial.println(angle_ay);
+        Serial.println(mapped_ay);
         //BTSerial.write("123");
         BTSerial.print(int(mapped_ax));
         BTSerial.print("$");
-        BTSerial.print(int(angle_ay));
+        BTSerial.print(int(mapped_ay));
         BTSerial.print("~");
         delay(100);
     }
