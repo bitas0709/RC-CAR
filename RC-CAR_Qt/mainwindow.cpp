@@ -117,90 +117,147 @@ void MainWindow::socketConnected() {
     socketWriteTimer->start(150);
 }
 
-void MainWindow::socketRead() {
-    recievedData = socket->readAll();
-    QString recievedDataStr = recievedData;
-    for (int i = 0; i < recievedDataStr.size(); i++) {
-        if (recievedDataStr == "$") {
-
-        } else if (recievedDataStr == "~") {
-
-        } else {
-            ui->BatteryLevelValueLabel->setNum(recievedDataStr.at(0).toLatin1());
-        }
-    }
-}
-
 void MainWindow::socketDisconnected() {
     lastStackedWidgetIndex = ui->stackedWidget->currentIndex();
-    ui->stackedWidget->setCurrentIndex(1);
     QMessageBox::warning(this, "Отключено", "Соединение с удалённым устройством потеряно");
+    ui->stackedWidget->setCurrentIndex(0);
+}
+
+void MainWindow::socketRead() {
+    recievedData = socket->readAll();
+    //QString recievedDataStr = recievedData;
+    QString recievedDataStr = QString::fromUtf8(recievedData);
+    qDebug() << "recievedDataStr = " << recievedDataStr;
+    /*if (formattedData.size() == 2) {
+        switch(formattedData[0].toInt()) {
+        case 04:
+            socket->write("04");
+            socket->write("$");
+            socket->write("1");
+            socket->write("~");
+            break;
+        case 10:
+            ui->BatteryLevelValueLabel->setText(formattedData[1]);
+            break;
+        }
+    }*/
 }
 
 void MainWindow::socketWrite() {
-    sendDataStr = QString::number(ui->AccelerationSlider->value());
-    sendDataChr = sendDataStr.toStdString().c_str();
-    socket->write(sendDataChr);
 #ifdef Q_OS_ANDROID
-    socket->write("$");
     switch(ui->comboBox_2->currentIndex()) {
     case 0:
-        sendAccelerometerStr = QString::number(int(accelHard->reading()->y()*10));
-        sendAccelerometerChr = sendAccelerometerStr.toStdString().c_str();
-        qDebug() << "accel = " << int(accelHard->reading()->y()*10);
+        AccelerometerValue = int(accelHard->reading()->y()*10);
         break;
     case 1:
-        sendAccelerometerStr = QString::number(int(accelHard->reading()->x()*10*-1));
-        sendAccelerometerChr = sendAccelerometerStr.toStdString().c_str();
-        qDebug() << "accel = " << int(accelHard->reading()->x()*10);
+        AccelerometerValue = int(accelHard->reading()->x()*10*-1);
         break;
     case 2:
-        sendAccelerometerStr = QString::number(int(accelHard->reading()->x()*10));
-        sendAccelerometerChr = sendAccelerometerStr.toStdString().c_str();
-        qDebug() << "accel = " << int(accelHard->reading()->x()*10);
+        AccelerometerValue = int(accelHard->reading()->x()*10);
         break;
     }
-    socket->write(sendAccelerometerChr);
+    if (ui->AccelerationSlider->value() != AccelerationLastValue && AccelerometerValue != SteeringLastValue) {
+        socket->write("01");
+        socket->write("$");
+        sendDataStr = QString::number(ui->AccelerationSlider->value());
+        sendDataChr = sendDataStr.toStdString().c_str();
+        socket->write(sendDataChr);
+        socket->write("$");
+        sendDataStr = QString::number(AccelerometerValue);
+        sendDataChr = sendDataStr.toStdString().c_str();
+        socket->write(sendDataChr);
+        socket->write("~");
+        AccelerationLastValue = ui->AccelerationSlider->value();
+        SteeringLastValue = AccelerometerValue;
+    } else if (ui->AccelerationSlider->value() != AccelerationLastValue) {
+        socket->write("02");
+        socket->write("$");
+        sendDataStr = QString::number(ui->AccelerationSlider->value());
+        sendDataChr = sendDataStr.toStdString().c_str();
+        socket->write(sendDataChr);
+        socket->write("~");
+        AccelerationLastValue = ui->AccelerationSlider->value();
+    } else if (AccelerometerValue != SteeringLastValue) {
+        socket->write("03");
+        socket->write("$");
+        sendDataStr = QString::number(AccelerometerValue);
+        sendDataChr = sendDataStr.toStdString().c_str();
+        socket->write(sendDataChr);
+        socket->write("~");
+        SteeringLastValue = AccelerometerValue;
+    }
 #else
-    socket->write("$");
-    sendDataStr = QString::number(ui->SteeringSlider->value());
-    sendDataChr = sendDataStr.toStdString().c_str();
-    socket->write(sendDataChr);
+    AccelerometerValue = ui->SteeringSlider->value();
+    if (ui->AccelerationSlider->value() != AccelerationLastValue && AccelerometerValue != SteeringLastValue) {
+        socket->write("01");
+        socket->write("$");
+        sendDataStr = QString::number(ui->AccelerationSlider->value());
+        sendDataChr = sendDataStr.toStdString().c_str();
+        socket->write(sendDataChr);
+        socket->write("$");
+        sendDataStr = QString::number(AccelerometerValue);
+        sendDataChr = sendDataStr.toStdString().c_str();
+        socket->write(sendDataChr);
+        socket->write("~");
+        AccelerationLastValue = ui->AccelerationSlider->value();
+        SteeringLastValue = AccelerometerValue;
+    } else if (ui->AccelerationSlider->value() != AccelerationLastValue) {
+        socket->write("02");
+        socket->write("$");
+        sendDataStr = QString::number(ui->AccelerationSlider->value());
+        sendDataChr = sendDataStr.toStdString().c_str();
+        socket->write(sendDataChr);
+        socket->write("~");
+    } else if (AccelerometerValue != SteeringLastValue) {
+        socket->write("03");
+        socket->write("$");
+        sendDataStr = QString::number(AccelerometerValue);
+        sendDataChr = sendDataStr.toStdString().c_str();
+        socket->write(sendDataChr);
+        socket->write("~");
+    }
 #endif
     if (lastLeftButtonFlag != LeftButtonFlag) {
+        socket->write("08");
         socket->write("$");
         if (LeftButtonFlag) {
-            socket->write("11");
+            socket->write("1");
         } else {
-            socket->write("10");
+            socket->write("0");
         }
         lastLeftButtonFlag = LeftButtonFlag;
+        socket->write("~");
     } else if (lastRightButtonFlag != RightButtonFlag) {
+        socket->write("07");
         socket->write("$");
         if (RightButtonFlag) {
-            socket->write("21");
+            socket->write("1");
         } else {
-            socket->write("20");
+            socket->write("0");
         }
         lastRightButtonFlag = RightButtonFlag;
+        socket->write("~");
     } else if (lastEmergencyButtonFlag != EmergencyButtonFlag) {
+        socket->write("09");
         socket->write("$");
         if (EmergencyButtonFlag) {
-            socket->write("31");
+            socket->write("1");
         } else {
-            socket->write("30");
+            socket->write("0");
         }
         lastEmergencyButtonFlag = EmergencyButtonFlag;
+        socket->write("~");
     } else if (lastHeadLightButtonFlag != HeadLightButtonFlag) {
+        socket->write("05");
         socket->write("$");
         if (HeadLightButtonFlag) {
-            socket->write("51");
+            socket->write("1");
         } else {
-            socket->write("50");
+            socket->write("0");
         }
         lastHeadLightButtonFlag = HeadLightButtonFlag;
+        socket->write("~");
     }
-    socket->write("~");
 }
 
 void MainWindow::on_SettingsButton_clicked()

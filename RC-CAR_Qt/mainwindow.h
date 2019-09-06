@@ -12,6 +12,7 @@
 #include <QDebug>
 #include <QDialog>
 #include <QGyroscopeReading>
+#include <QTextCodec>
 #include <QAccelerometer>
 #include <QAccelerometerReading>
 #include <QSlider>
@@ -19,6 +20,17 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QFile>
+
+#define AccelSteeringCode 01
+#define AccelerationCode 02
+#define SteeringCode 03
+#define KeepAliveCode 04
+#define HeadlightsLEDCode 05
+#define FoglightLEDCode 06
+#define RightTurnLEDCode 07
+#define LeftTurnLEDCode 08
+#define EmergencyLightLEDCode 09
+#define BatteryStatusCode 10
 
 namespace Ui {
 class MainWindow;
@@ -39,7 +51,7 @@ public:
     QTimer *socketWriteTimer;
     QTimer *exitTimeoutTimer;
     bool exitTimeoutFlag = false;
-    QByteArray sendData;
+    //QByteArray sendData;
     QByteArray recievedData;
     int accValue;
     QString sendDataStr;
@@ -57,6 +69,9 @@ public:
     bool LeftButtonFlag, RightButtonFlag, EmergencyButtonFlag, HeadLightButtonFlag;
     bool lastLeftButtonFlag, lastRightButtonFlag, lastEmergencyButtonFlag, lastHeadLightButtonFlag;
     int lastStackedWidgetIndex = 0;
+
+    int AccelerationLastValue = 0;
+    int SteeringLastValue = 0;
 
 private slots:
     void on_SearchButton_clicked();

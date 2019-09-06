@@ -9,6 +9,7 @@
 #define IN3 A2
 #define IN4 A1
 #define ENB 5
+#define BluetoothState 6
 
 #define FoglightLED 6
 #define HeadlightsLED 7
@@ -16,6 +17,9 @@
 #define StopLED 9
 #define RightTurnLED 10
 #define LeftTurnLED 11
+
+//#define AccelerationForwardPWM 9
+//#define AccelerationBackwardPWM 5
 
 /* 
 Далее идёт описание кодов определённых запросов:
@@ -83,6 +87,7 @@ bool TurnLEDBlinkActive;
 bool TurnLEDIsOn;
 unsigned long TurnLEDBlinkSpeed = 400;
 int TurnLEDBlinkID;
+
 unsigned long LastRecievedPacketTime;
 bool LastRecievedPacketTimeFlag;
 bool LastRecievedPacketTimeOldFlag = true;
@@ -92,6 +97,8 @@ unsigned long keepAliveWaitingTime = 500;
 bool keepAliveLastTimeFlag;
 bool keepAliveFlag = true;
 bool keepAliveConfirmRecieved;
+
+bool BluetoothStateLastFlag = true;
 
 char incomingChar;
 
@@ -112,6 +119,19 @@ void motor(int acceleration, int accelerationSpeed, int steering, int steeringSp
     analogWrite(ENB, accelerationSpeed);
     digitalWrite(ReverseLED, LOW);
   }
+  /*if (acceleration == 0) {
+    digitalWrite(AccelerationForwardPWM, LOW);
+    digitalWrite(AccelerationBackwardPWM, LOW);
+    digitalWrite(ReverseLED, LOW);
+  } else if (acceleration == -1) {
+    analogWrite(AccelerationBackwardPWM, accelerationSpeed);
+    digitalWrite(AccelerationForwardPWM, LOW);
+    digitalWrite(ReverseLED, HIGH);
+  } else if (acceleration == 1) {
+    analogWrite(AccelerationForwardPWM, accelerationSpeed);
+    digitalWrite(AccelerationBackwardPWM, LOW);
+    digitalWrite(ReverseLED, LOW);
+  }*/
   if (steering == 0) {
     digitalWrite(IN1, LOW);
     digitalWrite(IN2, LOW);
@@ -160,11 +180,11 @@ void TurnOnLED(int LEDMode, int enable) { //0 - отключить, 1 - акти
       }
       break;
     case StopLight:
-      if (enable == 1) {
-        digitalWrite(StopLED, HIGH);
-      } else {
-        digitalWrite(StopLED, LOW);
-      }
+      //if (enable == 1) {
+      //  digitalWrite(StopLED, HIGH);
+      //} else {
+      //  digitalWrite(StopLED, LOW);
+      //}
       break;
     case BackLight:
       if (enable == 1) {
@@ -191,13 +211,18 @@ void setup() {
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
 
+  //pinMode(AccelerationForwardPWM, OUTPUT);
+  //pinMode(AccelerationBackwardPWM, OUTPUT);
+
   pinMode(LeftTurnLED, OUTPUT);
   pinMode(RightTurnLED, OUTPUT);
   pinMode(StopLED, OUTPUT);
   pinMode(HeadlightsLED, OUTPUT);
   pinMode(ReverseLED, OUTPUT);
 
-  BTSerial.begin(9600);
+  pinMode(BluetoothState, INPUT);
+
+  BTSerial.begin(38400);
   Serial.begin(9600);
 }
 
@@ -221,14 +246,14 @@ void loop() {
     }
   }
   if (allDataRecieved == true) {
-    LastRecievedPacketTime = millis();
-    LastRecievedPacketTimeFlag = true;
+    //LastRecievedPacketTime = millis();
+    //LastRecievedPacketTimeFlag = true;
     for(int i = 0; i < maxStringCount; i++) {
       RecievedIntData[i] = RecievedData[i].toInt();
-      /*Serial.print("RecievedIntData[");
+      Serial.print("RecievedIntData[");
       Serial.print(i);
       Serial.print("] = ");
-      Serial.println(RecievedIntData[i]);*/
+      Serial.println(RecievedIntData[i]);
     }
     switch(RecievedIntData[0]) {
       case AccelSteeringCode:
@@ -292,6 +317,7 @@ void loop() {
         }
         break;
       case KeepAliveCode:
+        keepAliveConfirmRecieved = true;
         break;
       case HeadlightsLEDCode:
         if (RecievedIntData[1] == true) {
@@ -318,103 +344,37 @@ void loop() {
           TurnOnLED(TurnRight, 0);
         }
         break;
-    }
-    /*if (RecievedIntData[0] > 127) {
-      accelerationValue = map(RecievedIntData[0], 128, 255, 1, 255);
-      accelerationDirection = 1;
-    } else if (RecievedIntData[0] < 127) {
-      absAccelerationValue = abs(RecievedIntData[0]);
-      accelerationValue = map(absAccelerationValue, 0, 126, 255, 1);
-      accelerationDirection = -1;
-    } else if (RecievedIntData[0] == 127) {
-      accelerationValue = 0;
-      accelerationDirection = 0;
-    }
-    if (RecievedIntData[1] > 10 && RecievedIntData[1] < 50) {
-      steeringValue = map(RecievedIntData[1], 10, 50, 1, 127);
-      steeringDirection = -1;
-    } else if (RecievedIntData[1] > 50) {
-      steeringValue = 127;
-      steeringDirection = -1;
-    } else if (RecievedIntData[1] > -10 && RecievedIntData[1] < 10) {
-      steeringDirection = 0; 
-    } else if (RecievedIntData[1] < -10 && RecievedIntData[1] > -50) {
-      absSteeringValue = abs(RecievedIntData[1]);
-      steeringValue = map(absSteeringValue, 10, 50, 1, 127);
-      steeringDirection = 1;
-    } else if (RecievedIntData[1] < -50) {
-      steeringValue = 127;
-      steeringDirection = 1;
-    }
-    if (RecievedIntData[2] != 0) {
-      switch (RecievedIntData[2]) {
-        case 10: //выключить левый поворотник
-          TurnLEDBlinkActive = 0;
-          TurnOnLED(TurnLeft, 0);
-          break;
-        case 11: //включить левый поворотник
+      /*case LeftTurnLEDCode:
+        if (RecievedIntData[1] == true) {
           TurnLEDBlinkActive = 1;
           TurnLEDBlinkID = TurnLeft;
           TurnLEDIsOn = 1;
           TurnOnLED(TurnLEDBlinkID, TurnLEDIsOn);
-          break;
-        case 20: //выключить правый поворотник
+        } else {
           TurnLEDBlinkActive = 0;
-          TurnOnLED(TurnRight, 0);
-          break;
-        case 21: //включить правый поворотник
-          TurnLEDBlinkActive = 1;
-          TurnLEDBlinkID = TurnRight;
-          TurnLEDIsOn = 1;
-          TurnOnLED(TurnLEDBlinkID, TurnLEDIsOn);
-          break;
-        case 30: //выключить аварийные огни
-          TurnLEDBlinkActive = 0;
-          TurnOnLED(EmergencyLight, 0);
-          break;
-        case 31: //включить аварийные огни
-          TurnLEDBlinkActive = 1;
-          TurnLEDBlinkID = EmergencyLight;
-          TurnLEDIsOn = 1;
-          TurnOnLED(TurnLEDBlinkID, TurnLEDIsOn);
-          break;
-        case 40: //выключить стоп сигнал
-          TurnOnLED(StopLight, 0);
-          break;
-        case 41: //включить стоп сигнал
-          TurnOnLED(StopLight, 1);
-          break;
-        case 50: //выключить огни ближнего света
-          TurnOnLED(HeadLight, 0);
-          break;
-        case 51: //включить огни ближнего света
-          TurnOnLED(HeadLight, 1);
-          break;
-        case 60: //выключить огни заднего хода
-          TurnOnLED(BackLight, 0);
-          break;
-        case 61: //включить огни заднего хода
-          TurnOnLED(BackLight, 1);
-          break;
-      }
-    }*/
+          TurnOnLED(TurnLeft, 0);
+        }
+        break;*/
+    }
     motor(accelerationDirection, accelerationValue, steeringDirection, steeringValue);
     allDataRecieved = false;
     for (int i = 0; i < maxStringCount; i++) {
       RecievedData[i] = "";
     }
   }
-  if (SendDataLastTimeFlag == 0) {
+  if (SendDataLastTimeFlag == false) {
     SendDataLastTime = millis();
-    SendDataLastTimeFlag = 1;
+    SendDataLastTimeFlag = true;
   }
-  if (SendDataLastTimeFlag == 1 && millis() - SendDataLastTime > SendDataTimer) {
+  if (SendDataLastTimeFlag == true && millis() - SendDataLastTime > SendDataTimer) {
     BatteryLevel = map(analogRead(BatteryLevelPin), 580, 823, 0 , 100);
-    Serial.print("BatteryLevel = ");
-    Serial.println(BatteryLevel);
+    //Serial.print("BatteryLevel = ");
+    //Serial.println(BatteryLevel);
+    BTSerial.write(BatteryStatusCode);
+    BTSerial.write("$");
     BTSerial.write(BatteryLevel);
     BTSerial.write("~");
-    SendDataLastTimeFlag = 0;
+    SendDataLastTimeFlag = false;
   }
   if (TurnLEDBlinkActive == 1) {
     if (TurnLEDBlinkFlag == 0) {
@@ -432,21 +392,34 @@ void loop() {
       TurnLEDBlinkFlag = 0;
     }
   }
-  if (LastRecievedPacketTimeFlag == true && millis() - LastRecievedPacketTime > 200/* && LastRecievedPacketTimeOldFlag == true*/) {
-    accelerationDirection = 0;
+  if (digitalRead(BluetoothState) == false) {
+    if (BluetoothStateLastFlag != digitalRead(BluetoothState)) {
+      accelerationDirection = 0;
+      accelerationValue = 0;
+      steeringDirection = 0;
+      steeringValue = 0;
+      Serial.println("Disconnected!");
+      motor(accelerationDirection, accelerationValue, steeringDirection, steeringValue);
+      BluetoothStateLastFlag = false;
+    }
+  } else if (digitalRead(BluetoothState) == true && BluetoothStateLastFlag == false) {
+    Serial.println("Connected!");
+    BluetoothStateLastFlag = true;
+  }
+  if (LastRecievedPacketTimeFlag == true && millis() - LastRecievedPacketTime > 200) {
+    /*accelerationDirection = 0;
     accelerationValue = 0;
     steeringDirection = 0;
     steeringValue = 0;
-    motor(accelerationDirection, accelerationValue, steeringDirection, steeringValue);
-    //keepAliveFlag = false;
-  }
-  if (!keepAliveFlag) {
+    motor(accelerationDirection, accelerationValue, steeringDirection, steeringValue);*/
     BTSerial.write(KeepAliveCode);
     BTSerial.write("~");
     keepAliveLastTime = millis();
     keepAliveLastTimeFlag = true;
+    LastRecievedPacketTimeFlag = false;
+    //keepAliveFlag = false;
   }
-  if (keepAliveLastTimeFlag == 1 && millis() - keepAliveLastTime > keepAliveWaitingTime) {
+  if (keepAliveLastTimeFlag == true && millis() - keepAliveLastTime > keepAliveWaitingTime) {
     if (keepAliveConfirmRecieved) {
       keepAliveFlag = true;
     } else {
@@ -457,5 +430,6 @@ void loop() {
       motor(accelerationDirection, accelerationValue, steeringDirection, steeringValue);
     }
     keepAliveLastTimeFlag = false;
+    keepAliveConfirmRecieved = false;
   }
 }

@@ -27,6 +27,7 @@
 #define FK 0.1 // коэффициент комплементарного фильтра
 
 #define BTKEY 4
+#define BTSTATE 7
 
 MPU6050 accelgyro;
 SoftwareSerial BTSerial(3,2);
@@ -35,6 +36,8 @@ float angle_ax, angle_ay, angle_az;
 int mapped_ax, mapped_ay;
 int dt = 0;
 long int t_next, p_next;
+
+bool bluetoothState;
 
 // функция, которая не даёт значению выйти за пределы 
 float clamp(float v, float minv, float maxv){
@@ -50,7 +53,9 @@ void setup() {
     // инициализация MPU6050
     accelgyro.initialize();
     pinMode(BTKEY, OUTPUT);
-    delay(300);
+    pinMode(BTSTATE, INPUT);
+    BTSerial.begin(38400);
+    /*delay(300);
     digitalWrite(BTKEY, HIGH);
     delay(1000);
     BTSerial.begin(38400);
@@ -58,11 +63,11 @@ void setup() {
     BTSerial.println("AT+INIT");
     delay(250);
     digitalWrite(BTKEY, LOW);
-    //BTSerial.println("AT+BIND=0018,91,D72DC5");
-    //BTSerial.println("AT+UART=38400,0,0");
+    BTSerial.println("AT+BIND=0018,91,D72DC5");
+    BTSerial.println("AT+UART=38400,0,0");
     delay(100);
     BTSerial.println("AT+LINK=0018,91,D72DC5");
-    delay(500);
+    delay(500);*/
     Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 }
 
@@ -81,10 +86,10 @@ void loop() {
         accelgyro.getMotion6(&ax_raw, &ay_raw, &az_raw, &gx_raw, &gy_raw, &gz_raw);
         ay = ay_raw / 16384.0;
         ay = clamp(ay, -1.0, 1.0);
-        angle_ax = 90 - TO_DEG*acos(ay);
+        angle_ay = 90 - TO_DEG*acos(ay);
         ax = ax_raw / 16384.0;
         ax = clamp(ax, -1.0, 1.0);
-        angle_ay = 90 - TO_DEG*acos(ax);
+        angle_ax = 90 - TO_DEG*acos(ax);
     }
 
     t = millis();
@@ -105,17 +110,19 @@ void loop() {
         } else {
             mapped_ay = angle_ay;
         }
-        //Serial.print(angle_ax);
-        //Serial.print("/");
         Serial.print(mapped_ax);
         Serial.print("/");
-        //Serial.println(angle_ay);
-        Serial.println(mapped_ay);
-        //BTSerial.write("123");
-        BTSerial.print(int(mapped_ax));
-        BTSerial.print("$");
-        BTSerial.print(int(mapped_ay));
-        BTSerial.print("~");
+        Serial.println(-mapped_ay);
+        bluetoothState = digitalRead(BTSTATE);
+            
+        if (bluetoothState == true) {
+            BTSerial.print(AccelSteeringCode);
+            BTSerial.print("$");
+            BTSerial.print(int(mapped_ax));
+            BTSerial.print("$");
+            BTSerial.print(int(-mapped_ay));
+            BTSerial.print("~");
+        }
         delay(100);
     }
 }
