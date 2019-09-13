@@ -259,6 +259,7 @@ void loop() {
       case AccelSteeringCode:
         if (RecievedIntData[1] > 127) {
           accelerationValue = map(RecievedIntData[1], 128, 255, 1, 255);
+          //accelerationValue = map(RecievedIntData[1], 128, 255, 1, 200);
           accelerationDirection = 1;
         } else if (RecievedIntData[1] < 127) {
           absAccelerationValue = abs(RecievedIntData[1]);

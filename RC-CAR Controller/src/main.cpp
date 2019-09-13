@@ -103,9 +103,9 @@ void loop() {
         } else if (int(angle_ax) > 45) {
             mapped_ax = 255;
         }
-        if (int(angle_ay) >= -50 && int(angle_ay) < 0) {
-            mapped_ay = map(int(angle_ay), -50, -1, -90, -1);
-        } else if (int(angle_ay) < -50) {
+        if (int(angle_ay) >= -20 && int(angle_ay) < 0) {
+            mapped_ay = map(int(angle_ay), -20, -1, -90, -1);
+        } else if (int(angle_ay) < -20) {
             mapped_ay = -90;
         } else {
             mapped_ay = angle_ay;
