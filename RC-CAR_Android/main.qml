@@ -16,6 +16,7 @@ ApplicationWindow {
     InetSocketClass {
         id: inetSocket
     }
+
     Shortcut {
         sequences: ["Esc", "Back"]
         //enabled: Дописать при добавлении бокового меню

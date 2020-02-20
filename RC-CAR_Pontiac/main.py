@@ -18,31 +18,31 @@ ENB = PWM(Pin(13)) #управление ускорением D7
 
 def accelFunc(direction, speed): #управление ускорением
   if (direction == "forward"): #движение вперед
-    IN1.off()
-    IN2.on()
-    ENA.duty(speed)
-  elif (direction == "back"): #движение назад
-    IN1.on()
-    IN2.off()
-    ENA.duty(speed)
-  elif (direction == "stop"): #остановка
-    IN1.off()
-    IN2.off()
-    ENA.duty(0)
-
-def steerFunc(direction, speed): #рулевое управление
-  if (direction == "left"): #поворот налево
     IN3.off()
     IN4.on()
     ENB.duty(speed)
-  elif (direction == "right"): #поворот направо
+  elif (direction == "back"): #движение назад
     IN3.on()
     IN4.off()
     ENB.duty(speed)
-  elif (direction == "straight"): #движение прямо
+  elif (direction == "stop"): #остановка
     IN3.off()
     IN4.off()
     ENB.duty(0)
+
+def steerFunc(direction, speed): #рулевое управление
+  if (direction == "left"): #поворот налево
+    IN1.off()
+    IN2.on()
+    ENA.duty(speed)
+  elif (direction == "right"): #поворот направо
+    IN1.on()
+    IN2.off()
+    ENA.duty(speed)
+  elif (direction == "straight"): #движение прямо
+    IN1.off()
+    IN2.off()
+    ENA.duty(0)
     
 def map(value, fromMin, fromMax, toMin, toMax): #преобразование числа из одного диапазона в число из другого диапазона
     return int((value - fromMin) * (toMax - toMin) / (fromMax - fromMin) + toMin)
@@ -84,15 +84,15 @@ while True:
             if (accelVal == 511):
                 accelFunc("stop", 0)
             elif (accelVal > 511 and accelVal <= 1023):
-                accelFunc("forward", map(accelVal, 512, 1023, 150, 1023))
+                accelFunc("forward", map(accelVal, 512, 1023, 350, 1023))
             elif (accelVal < 511 and accelVal >= 0):
-                accelFunc("back", map(accelVal, 510, 0, 150, 1023))
+                accelFunc("back", map(accelVal, 510, 0, 350, 1023))
             if (steerVal == 511): #здесь с минимальными пределами и мертвыми зонами еще надо разобраться
                 steerFunc("straight", 0)
             elif (steerVal > 511 and steerVal <= 1023):
-                steerFunc("right", map(steerVal, 512, 1023, 250, 1023))
+                steerFunc("right", map(steerVal, 512, 1023, 0, 1023))
             elif (steerVal < 511 and steerVal >= 0):
-                steerFunc("left", map(steerVal, 510, 0, 250, 1023))
+                steerFunc("left", map(steerVal, 510, 0, 0, 1023))
         except ValueError:
             try:
                 sock.sendto(bytes("valueerror", "utf-8"), addr)

@@ -12,7 +12,6 @@
 #include <QGyroscopeReading>
 #include <QAccelerometer>
 #include <QAccelerometerReading>
-#include <QSettings>
 #include <QTimer>
 
 class InetSocketClass : public QObject

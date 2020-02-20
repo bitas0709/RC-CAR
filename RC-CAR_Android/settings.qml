@@ -16,13 +16,18 @@ Page {
                 text: "Угол акселерометра"
             }
             ComboBox {
+                id: accelStateComboBox
                 width: 200
+                currentIndex: settings.accelState
                 model: ListModel {
                     id: accelListModelItems
                     ListElement { text: "90 градусов влево"; value: "-1" }
                     ListElement { text: "без корректировки"; value: "0" }
                     ListElement { text: "90 градусов вправо"; value: "1" }
                     ListElement { text: "разворот на 180 градусов"; value: "2" }
+                }
+                onCurrentIndexChanged: {
+                    settings.accelState = accelStateComboBox.currentIndex
                 }
             }
         }
