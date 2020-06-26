@@ -110,4 +110,3 @@ while True:
         accelFunc("stop", 0)
         steerFunc("straight", 0)
         sock.settimeout(None)
-    
