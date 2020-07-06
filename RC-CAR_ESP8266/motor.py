@@ -2,6 +2,27 @@
 def map(value, fromMin, fromMax, toMin, toMax):
     return int((value - fromMin) * (toMax - toMin) / (fromMax - fromMin) + toMin)
 
+# Основная функция для управления ускорением и рулевым механизмом
+def move(speed, steer):
+    # Управление ускорением
+    if (speed == 511):
+        moveStop()
+    elif (speed > 511 and speed <= 1023):
+        moveForward(speed)
+    elif (speed >= 0 and speed < 511):
+        moveBack(speed)
+    else: # Что тогда сюда вообще пришло?
+        moveStop()
+    # Управление рулём (без мертвых зон)
+    if (steer == 511):
+        steerStop()
+    elif (steer > 511 and steer <= 1023):
+        steerRight(steer)
+    elif (steer >= 0 and steer < 511):
+        steerLeft(steer)
+    else: # Что тогда сюда вообще пришло?
+        steerStop()
+
 # Функция для прямого управления двигательным мотором для движения вперед
 def moveForward(speed):
     IN1.on()
