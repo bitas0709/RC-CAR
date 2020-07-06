@@ -2,35 +2,38 @@
 def map(value, fromMin, fromMax, toMin, toMax):
     return int((value - fromMin) * (toMax - toMin) / (fromMax - fromMin) + toMin)
 
-# Функция, принимающая значения для непрямого ускорения
-def move():
-    pass
-
 # Функция для прямого управления двигательным мотором для движения вперед
-def moveForward():
-    pass
+def moveForward(speed):
+    IN1.on()
+    IN2.off()
+    ENA.duty(map(speed, 512, 1023, 150, 1023))
 
 # Функция для прямого управления двигательным мотором для движения назад
-def moveBack(): #движение назад
-    pass
+def moveBack(speed): #движение назад
+    IN1.off()
+    IN2.on()
+    ENA.duty(map(speed, 510, 0, 150, 1023))
 
 # Функция для остановки двигательного мотора
 def moveStop():
     IN1.off()
     IN2.off()
-    ENB.duty(0)
-    pass
-
-# Функция, принимающая значения для непрямого поворота колес
+    ENA.duty(0)
 
 # Функция для прямого управления поворотным двигателем для движения влево
-def steerLeft(): #поворот колес влево
-    pass
+def steerLeft(strength): #поворот колес влево
+    IN3.on()
+    IN4.off()
+    ENB.duty(map(strength, 510, 0, 150, 1023))
 
 # Функция для прямого управления поворотным двигателем для движения вправо
-def steerRight(): #поворот колёс вправо
-    pass
+def steerRight(strength): #поворот колёс вправо
+    IN3.off()
+    IN4.on()
+    ENB.duty(map(strength, 512, 1023, 150, 1023))
 
 # Функция для выпрямления колес
 def steerStop():
-    pass
+    IN3.off()
+    IN4.off()
+    ENB.duty(0)

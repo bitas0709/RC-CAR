@@ -20,29 +20,6 @@ ENB = PWM(Pin(13))  # управление ускорением D7
 # словарь, содержащий настройки, считанные из файла settings.txt
 settings = {}
 
-try:  # попытка открыть файл
-    openSettingsFile()
-# инициализация базовых настроек, если файл не существует
-except FileNotFoundError:
-    file = open("settings.txt", 'x')
-    file.write("intWi-FiSSID RC-CAR\n")
-    file.write("intWi-FiPass 1234568790\n")
-    file.write("extWi-Fi inactive\n")
-    file.write("extWi-FiSSID NULL")
-    file.write("extWi-FiPass NULL")
-    file.write("port 5000\n")
-    file.close()
-    openSettingsFile()
-
-if (settings['extWi-Fi'] == "inactive") or (settings['extWi-FiSSID'] == "NULL") or (settings['extWi-FiPass'] == "NULL"):
-    createAPNetwork()
-else:
-    if not connectToStation():
-        createAPNetwork()
-
-host = wlan.ifconfig()[0]
-port = settings[port]
-
 def openSettingsFile():
     with open("settings.txt") as file:
         for line in file:
@@ -63,7 +40,31 @@ def connectToStation():
     for i in range(1, 3):
         if not wlan.isconnected():
             time.sleep(1)
+    wlan.active(False)
     return wlan.isconnected()
+
+try:  # попытка открыть файл
+    openSettingsFile()
+# инициализация базовых настроек, если файл не существует
+except OSError:
+    file = open("settings.txt", 'x')
+    file.write("intWi-FiSSID RC-CAR\n")
+    file.write("intWi-FiPass 1234568790\n")
+    file.write("extWi-Fi inactive\n")
+    file.write("extWi-FiSSID NULL\n")
+    file.write("extWi-FiPass NULL\n")
+    file.write("port 5000\n")
+    file.close()
+    openSettingsFile()
+
+if (settings['extWi-Fi'] == "inactive") or (settings['extWi-FiSSID'] == "NULL") or (settings['extWi-FiPass'] == "NULL"):
+    createAPNetwork()
+else:
+    if not connectToStation():
+        createAPNetwork()
+
+host = wlan.ifconfig()[0]
+port = settings[port]
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((host, port))
@@ -87,15 +88,15 @@ while True:
             if (accelVal == 511):
                 motor.moveStop()
             elif (accelVal > 511 and accelVal <= 1023):
-                accelFunc("forward", map(accelVal, 512, 1023, 150, 1023))
+                motor.moveForward(accelVal)
             elif (accelVal < 511 and accelVal >= 0):
-                accelFunc("back", map(accelVal, 510, 0, 150, 1023))
+                motor.moveBack(accelVal)
             if (steerVal == 511):  # здесь с минимальными пределами и мертвыми зонами еще надо разобраться
-                steerFunc("straight", 0)
+                motor.steerStop()
             elif (steerVal > 511 and steerVal <= 1023):
-                steerFunc("right", map(steerVal, 512, 1023, 250, 1023))
+                motor.steerRight(steerVal)
             elif (steerVal < 511 and steerVal >= 0):
-                steerFunc("left", map(steerVal, 510, 0, 250, 1023))
+                motor.steerLeft(steerVal)
         except ValueError:
             try:
                 sock.sendto(bytes("valueerror", "utf-8"), addr)
