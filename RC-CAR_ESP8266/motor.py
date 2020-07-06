@@ -1,39 +1,49 @@
+# Настройки рулевого управления и ускорения (передаются из основных настроек)
+motorSettings = {}
+
 # Преобразование значения в диапазон, позволяющий управлять моторами
 def map(value, fromMin, fromMax, toMin, toMax):
     return int((value - fromMin) * (toMax - toMin) / (fromMax - fromMin) + toMin)
 
 # Основная функция для управления ускорением и рулевым механизмом
 def move(speed, steer):
-    # Управление ускорением
-    if (speed == 511):
+    # Управление ускорением (без мертвых зон)
+    if (speed > motorSettings['moveBackwardFrom'] and speed < motorSettings['moveForwardFrom']):
         moveStop()
-    elif (speed > 511 and speed <= 1023):
+    elif (speed >= motorSettings['moveForwardFrom'] and speed <= motorSettings['moveForwardTo']):
         moveForward(speed)
-    elif (speed >= 0 and speed < 511):
+    elif (speed <= motorSettings['moveBackwardFrom'] and speed >= motorSettings['moveBackwardTo']):
         moveBack(speed)
     else: # Что тогда сюда вообще пришло?
         moveStop()
     # Управление рулём (без мертвых зон)
-    if (steer == 511):
+    if (steer > motorSettings['steerLeftFrom'] and steer < motorSettings['steerRightFrom']):
         steerStop()
-    elif (steer > 511 and steer <= 1023):
+    elif (steer >= motorSettings['steerRightFrom'] and steer <= motorSettings['steerRightTo']):
         steerRight(steer)
-    elif (steer >= 0 and steer < 511):
+    elif (steer <= motorSettings['steerLeftFrom'] and steer >= motorSettings['steerLeftTo']):
         steerLeft(steer)
     else: # Что тогда сюда вообще пришло?
         steerStop()
+
+#Функция для полной остановки машины
+def stop():
+    moveStop()
+    steerStop()
 
 # Функция для прямого управления двигательным мотором для движения вперед
 def moveForward(speed):
     IN1.on()
     IN2.off()
-    ENA.duty(map(speed, 512, 1023, 150, 1023))
+    ENA.duty(map(speed, motorSettings['moveForwardFrom'], motorSettings['moveForwardTo'], 
+                 motorSettings['mapMoveForwardFrom'], motorSettings['mapMoveForwardTo']))
 
 # Функция для прямого управления двигательным мотором для движения назад
 def moveBack(speed): #движение назад
     IN1.off()
     IN2.on()
-    ENA.duty(map(speed, 510, 0, 150, 1023))
+    ENA.duty(map(speed, motorSettings['moveBackwardFrom'], motorSettings['moveBackwardTo'],
+                 motorSettings['mapMoveBackwardFrom'], motorSettings['mapMoveBackwardTo']))
 
 # Функция для остановки двигательного мотора
 def moveStop():
@@ -45,13 +55,15 @@ def moveStop():
 def steerLeft(strength): #поворот колес влево
     IN3.on()
     IN4.off()
-    ENB.duty(map(strength, 510, 0, 150, 1023))
+    ENB.duty(map(strength, motorSettings['steerLeftFrom'], motorSettings['steerLeftTo'],
+                 motorSettings['mapSteerLeftFrom'], motorSettings['mapSteerLeftTo']))
 
 # Функция для прямого управления поворотным двигателем для движения вправо
 def steerRight(strength): #поворот колёс вправо
     IN3.off()
     IN4.on()
-    ENB.duty(map(strength, 512, 1023, 150, 1023))
+    ENB.duty(map(strength, motorSettings['steerRightFrom'], motorSettings['steerRightTo'],
+                 motorSettings['mapSteerRightFrom'], motorSettings['mapSteerRightTo']))
 
 # Функция для выпрямления колес
 def steerStop():

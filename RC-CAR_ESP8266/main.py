@@ -26,6 +26,7 @@ def openSettingsFile():
             key, *value = line.split()
             settings[key] = value
         file.close()
+        motor.motorSettings = settings.copy()
 
 def createAPNetwork():
     wlan = network.WLAN(network.AP_IF)
@@ -48,13 +49,38 @@ try:  # Попытка открыть файл
 # Инициализация базовых настроек, если файл не существует
 except OSError:
     file = open("settings.txt", 'x')
+    
+    # Основные настройки сети
     file.write("intWiFiSSID RC-CAR\n")
     file.write("intWiFiPass 1234568790\n")
     file.write("extWiFi inactive\n")
     file.write("extWiFiSSID NULL\n")
     file.write("extWiFiPass NULL\n")
     file.write("port 5000\n")
-    file.write("moveDeadArea 0") # В процентах (от 0 до 100)
+    
+    # Настройки рулевого управления и ускорения
+    file.write("moveDeadArea 0\n") # В процентах (от 0 до 100)
+    file.write("steerDeadArea 0\n") # В процентах (от 0 до 100)
+    file.write("moveForwardFrom 512\n") # Значение, при котором машина начнёт движение вперед
+    file.write("moveForwardTo 1023\n") # Значение, при котором машина будет ехать вперед на полном ходу
+    file.write("moveBackwardFrom 510\n") # Значение, при котором машина начнёт движение назад
+    file.write("moveBackwardTo 0\n") # Значение, при котором машина будет ехать назад на полном ходу
+    file.write("steerLeftFrom 510\n") # Значение, при котором машина начнёт поворачивать налево
+    file.write("steerLeftTo 0\n") # Значение, при котором колёса у машины будут повёрнуты максимально влево
+    file.write("steerRightFrom 512\n") # Значение, при котором машина начнёт поворачивать направо
+    file.write("steerRightTo 1023\n") # Значение, при котором колёса у машина будут повёрнуты максимально вправо
+    
+    # Значения, в которые будет произведено преобразование полученных значений
+    # Используется для калибровки движения машины
+    file.write("mapMoveForwardFrom 150\n")
+    file.write("mapMoveForwardTo 1023\n")
+    file.write("mapMoveBackwardFrom 150\n")
+    file.write("mapMoveBackwardTo 1023\n")
+    file.write("mapSteerLeftFrom 150\n")
+    file.write("mapSteerLeftTo 1023\n")
+    file.write("mapSteerRightFrom 150\n")
+    file.write("mapSteerRightTo 1023\n")
+    
     file.close()
     openSettingsFile()
 
@@ -67,11 +93,12 @@ else:
 host = wlan.ifconfig()[0]
 port = settings[port]
 
+# Создание UDP сокета
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((host, port))
 
 while True:
-    try:
+    try: # Получение данных с управляющего устройства
         data, addr = sock.recvfrom(1024)
         strdata = data.decode("utf-8")
         sock.settimeout(1)
@@ -87,9 +114,16 @@ while True:
                     sock.sendto(bytes(settings[recvvalues[1]], "utf-8"), addr)
                 except KeyError: # На случай, если данной настройки не существует
                     pass
-                pass
             elif (recvvalues[0] == '03'): # Задание настроек машинки
                 # На вход приходит код и два значения
-                pass
+                if (settings.get(recvvalues[1])):
+                    settings[recvvalues[1]] = recvvalues[2]
+                else:
+                    pass # Такой настройки не существует
             elif (recvvalues[0] == '04'): # Управление фарами
                 pass
+    except OSError:
+        # print("timeout")
+        sock.sendto(bytes("timeout", "utf-8"), addr)
+        motor.stop()
+        sock.settimeout(None)
