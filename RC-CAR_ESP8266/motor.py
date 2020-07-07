@@ -1,6 +1,14 @@
 # Настройки рулевого управления и ускорения (передаются из основных настроек)
 motorSettings = {}
 
+IN1 = Pin(4, Pin.OUT)  # Вправо D2
+IN2 = Pin(0, Pin.OUT)  # Влево D3
+IN3 = Pin(14, Pin.OUT)  # Назад D5
+IN4 = Pin(12, Pin.OUT)  # Вперед D6
+
+ENA = PWM(Pin(5))  # Рулевое управление D1
+ENB = PWM(Pin(13))  # Управление ускорением D7
+
 # Преобразование значения в диапазон, позволяющий управлять моторами
 def map(value, fromMin, fromMax, toMin, toMax):
     return int((value - fromMin) * (toMax - toMin) / (fromMax - fromMin) + toMin)

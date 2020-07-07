@@ -9,32 +9,24 @@ NodeLED.value(0)
 time.sleep(1)
 NodeLED.value(1)
 
-IN1 = Pin(4, Pin.OUT)  # Вправо D2
-IN2 = Pin(0, Pin.OUT)  # Влево D3
-IN3 = Pin(14, Pin.OUT)  # Назад D5
-IN4 = Pin(12, Pin.OUT)  # Вперед D6
-
-ENA = PWM(Pin(5))  # Рулевое управление D1
-ENB = PWM(Pin(13))  # Управление ускорением D7
-
 # Словарь, содержащий настройки, считанные из файла settings.txt
 settings = {}
 
-def openSettingsFile():
+def openSettingsFile(): # Открытие и считывание файла настроек
     with open("settings.txt") as file:
         for line in file:
             key, *value = line.split()
             settings[key] = value
         file.close()
-        motor.motorSettings = settings.copy()
+        motor.motorSettings = settings.copy() # Копирование настроек в настройки моторов
 
-def createAPNetwork():
+def createAPNetwork(): # Создание собственной точки доступа
     wlan = network.WLAN(network.AP_IF)
     wlan.active(True)
     wlan.config(essid=settings['intWiFiSSID'])
     wlan.config(password=settings['intWiFiPass'])
     
-def connectToStation():
+def connectToStation(): # Подключение к внешней точке доступа, заданной в настройках
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     wlan.connect(settings['extWiFiSSID'], settings['extWiFiPass'])
@@ -51,12 +43,12 @@ except OSError:
     file = open("settings.txt", 'x')
     
     # Основные настройки сети
-    file.write("intWiFiSSID RC-CAR\n")
-    file.write("intWiFiPass 1234568790\n")
-    file.write("extWiFi inactive\n")
-    file.write("extWiFiSSID NULL\n")
-    file.write("extWiFiPass NULL\n")
-    file.write("port 5000\n")
+    file.write("intWiFiSSID RC-CAR\n") # Название точки доступа, создаваемой ESP
+    file.write("intWiFiPass 1234568790\n") # Пароль точки доступа, создаваемой ESP
+    file.write("extWiFi inactive\n") # Состояние подключения к точке доступа (inactive/active)
+    file.write("extWiFiSSID NULL\n") # Название точки доступа, к которой будет подключена ESP
+    file.write("extWiFiPass NULL\n") # Пароль точки доступа, к которой будет подключена ESP
+    file.write("port 5000\n") # Порт, на котором идёт прослушивание команд
     
     # Настройки рулевого управления и ускорения
     file.write("moveDeadArea 0\n") # В процентах (от 0 до 100)
@@ -72,8 +64,8 @@ except OSError:
     
     # Значения, в которые будет произведено преобразование полученных значений
     # Используется для калибровки движения машины
-    file.write("mapMoveForwardFrom 150\n")
-    file.write("mapMoveForwardTo 1023\n")
+    file.write("mapMoveForwardFrom 150\n") # Начальное значение ШИМ, подаваемое на мотор
+    file.write("mapMoveForwardTo 1023\n") # Конечное значение ШИМ, подаваемое на мотор
     file.write("mapMoveBackwardFrom 150\n")
     file.write("mapMoveBackwardTo 1023\n")
     file.write("mapSteerLeftFrom 150\n")
@@ -121,7 +113,7 @@ while True:
                 else:
                     pass # Такой настройки не существует
             elif (recvvalues[0] == '04'): # Управление фарами
-                pass
+                pass # Пока не реализовано
     except OSError:
         # print("timeout")
         sock.sendto(bytes("timeout", "utf-8"), addr)
