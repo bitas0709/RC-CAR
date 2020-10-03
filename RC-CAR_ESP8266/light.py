@@ -1,0 +1,2 @@
+stopLight = Pin(
+headLight = 
