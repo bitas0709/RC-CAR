@@ -1,2 +1,0 @@
-stopLight = Pin(
-headLight = 
